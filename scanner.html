@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบสแกน QR Code เช็คชื่อนักศึกษา</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts - Prompt -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: #f8f9fa;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .navbar-brand {
+            font-weight: 600;
+        }
+        .navbar {
+            background-color: #0a2463 !important;
+        }
+        .main-content {
+            flex: 1;
+            padding: 20px 0;
+        }
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .card-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            font-weight: 500;
+        }
+        #qr-reader {
+            width: 100%;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        #qr-reader__scan_region {
+            background: #f8f9fa;
+        }
+        #qr-reader__status_span {
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+        .scanner-container {
+            position: relative;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .scanner-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 10px;
+            color: white;
+        }
+        .student-info {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            display: none;
+        }
+        .student-info.success {
+            border-left: 5px solid #28a745;
+        }
+        .student-info.late {
+            border-left: 5px solid #ffc107;
+        }
+        .student-info.error {
+            border-left: 5px solid #dc3545;
+        }
+        .attendance-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .attendance-list .list-group-item {
+            font-size: 14px;
+        }
+        .badge-success {
+            background-color: #28a745;
+            color: white;
+        }
+        .badge-warning {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        .badge-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+        .feedback-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1050;
+            min-width: 300px;
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            display: none;
+        }
+        .spinner-container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .attendance-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .custom-select-container {
+            position: relative;
+        }
+        .custom-select-container select {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            padding-right: 30px;
+        }
+        .custom-select-container:after {
+            content: "\f078";
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            color: #6c757d;
+            pointer-events: none;
+        }
+        footer {
+            background-color: #f8f9fa;
+            padding: 10px 0;
+            text-align: center;
+            margin-top: auto;
+            font-size: 14px;
+            color: #6c757d;
+            border-top: 1px solid #e9ecef;
+        }
+        @media (max-width: 576px) {
+            .container {
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+            .card {
+                border-radius: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-qrcode me-2"></i>ระบบเช็คชื่อนักศึกษา
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/scan">
+                            <i class="fas fa-camera me-1"></i> สแกน QR Code
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/events">
+                            <i class="fas fa-calendar-alt me-1"></i> จัดการกิจกรรม
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/reports">
+                            <i class="fas fa-chart-bar me-1"></i> รายงาน
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="logoutBtn">
+                            <i class="fas fa-sign-out-alt me-1"></i> ออกจากระบบ
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span><i class="fas fa-camera me-2"></i>สแกน QR Code</span>
+                            <div>
+                                <button id="switchCameraBtn" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-sync-alt me-1"></i>สลับกล้อง
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="custom-select-container mb-3">
+                                <select id="eventSelect" class="form-select">
+                                    <option value="">-- เลือกกิจกรรม/รายวิชา --</option>
+                                </select>
+                            </div>
+                            <div class="scanner-container">
+                                <div id="qr-reader"></div>
+                                <div id="scanner-overlay" class="scanner-overlay d-none">
+                                    <div class="text-center">
+                                        <div class="spinner-border text-light mb-2" role="status"></div>
+                                        <div>กำลังประมวลผล...</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-center mt-3">
+                                <button id="startScanBtn" class="btn btn-primary">
+                                    <i class="fas fa-play me-1"></i>เริ่มสแกน
+                                </button>
+                                <button id="stopScanBtn" class="btn btn-secondary d-none">
+                                    <i class="fas fa-stop me-1"></i>หยุดสแกน
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="studentInfo" class="student-info">
+                        <h5 class="mb-3">ข้อมูลนักศึกษา</h5>
+                        <div class="row">
+                            <div class="col-4">
+                                <p class="mb-1"><strong>รหัสนักศึกษา</strong></p>
+                                <p id="studentId">-</p>
+                            </div>
+                            <div class="col-8">
+                                <p class="mb-1"><strong>ชื่อ-นามสกุล</strong></p>
+                                <p id="studentName">-</p>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-6">
+                                <p class="mb-1"><strong>คณะ</strong></p>
+                                <p id="faculty">-</p>
+                            </div>
+                            <div class="col-6">
+                                <p class="mb-1"><strong>สาขา</strong></p>
+                                <p id="department">-</p>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-6">
+                                <p class="mb-1"><strong>สถานะ</strong></p>
+                                <p id="status">-</p>
+                            </div>
+                            <div class="col-6">
+                                <p class="mb-1"><strong>เวลา</strong></p>
+                                <p id="checkTime">-</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="attendance-header">
+                                <span><i class="fas fa-clipboard-list me-2"></i>รายชื่อผู้เข้าร่วม</span>
+                                <div>
+                                    <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="ค้นหา...">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="attendance-list">
+                                <ul id="attendanceList" class="list-group list-group-flush">
+                                    <li class="list-group-item text-center text-muted">
+                                        <i class="fas fa-info-circle me-1"></i>กรุณาเลือกกิจกรรม/รายวิชา
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-white">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="badge bg-success me-1">ปกติ</span>
+                                    <span id="presentCount">0</span>
+                                    <span class="badge bg-warning text-dark mx-1">มาสาย</span>
+                                    <span id="lateCount">0</span>
+                                </div>
+                                <div>
+                                    <span>ทั้งหมด: <span id="totalCount">0</span> คน</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <i class="fas fa-keyboard me-2"></i>บันทึกด้วยตนเอง
+                        </div>
+                        <div class="card-body">
+                            <form id="manualForm">
+                                <div class="mb-3">
+                                    <label for="manualStudentId" class="form-label">รหัสนักศึกษา</label>
+                                    <input type="text" class="form-control" id="manualStudentId" placeholder="รหัสนักศึกษา" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="manualStatus" class="form-label">สถานะ</label>
+                                    <select class="form-select" id="manualStatus" required>
+                                        <option value="present">มาเรียน</option>
+                                        <option value="late">มาสาย</option>
+                                        <option value="absent">ขาดเรียน</option>
+                                        <option value="excused">ลาป่วย/ลากิจ</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="manualNotes" class="form-label">บันทึกเพิ่มเติม</label>
+                                    <textarea class="form-control" id="manualNotes" rows="2"></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-save me-1"></i>บันทึก
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p class="mb-0">© 2025 ระบบเช็คชื่อนักศึกษาด้วย QR Code - มหาวิทยาลัยนอร์ทกรุงเทพ</p>
+        </div>
+    </footer>
+
+    <!-- Feedback Toast Container -->
+    <div class="feedback-container"></div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="spinner-container">
+            <div class="spinner-border text-primary mb-2" role="status"></div>
+            <div>กำลังประมวลผล...</div>
+        </div>
+    </div>
+
+    <!-- Bootstrap & Required JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- HTML5 QR Code Scanner -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.4/html5-qrcode.min.js"></script>
+    <!-- CryptoJS for QR Code decryption -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+
+    <script>
+        // ตรวจสอบสถานะการล็อกอิน
+        document.addEventListener('DOMContentLoaded', function() {
+            // ตรวจสอบว่ามีการล็อกอินหรือไม่
+            checkAuthentication();
+            
+            // โหลดรายการกิจกรรม/รายวิชา
+            loadEvents();
+            
+            // กำหนดตัวแปรสำหรับเก็บค่า instance ของ scanner
+            let html5QrCodeScanner = null;
+            let selectedEventId = null;
+            let cameraId = null;
+            
+            // เริ่มการสแกน
+            document.getElementById('startScanBtn').addEventListener('click', function() {
+                // ตรวจสอบว่าได้เลือกกิจกรรมหรือไม่
+                selectedEventId = document.getElementById('eventSelect').value;
+                if (!selectedEventId) {
+                    showFeedback('กรุณาเลือกกิจกรรม/รายวิชาก่อนเริ่มการสแกน', 'warning');
+                    return;
+                }
+                
+                startScanner();
+                document.getElementById('startScanBtn').classList.add('d-none');
+                document.getElementById('stopScanBtn').classList.remove('d-none');
+                
+                // โหลดรายชื่อผู้เข้าร่วมสำหรับกิจกรรมที่เลือก
+                loadAttendanceList(selectedEventId);
+            });
+            
+            // หยุดการสแกน
+            document.getElementById('stopScanBtn').addEventListener('click', function() {
+                stopScanner();
+                document.getElementById('stopScanBtn').classList.add('d-none');
+                document.getElementById('startScanBtn').classList.remove('d-none');
+            });
+            
+            // สลับกล้อง
+            document.getElementById('switchCameraBtn').addEventListener('click', function() {
+                if (html5QrCodeScanner) {
+                    stopScanner();
+                    
+                    // เปลี่ยนกล้องในครั้งถัดไป
+                    Html5Qrcode.getCameras().then(cameras => {
+                        if (cameras && cameras.length) {
+                            let currentCameraIndex = cameras.findIndex(camera => camera.id === cameraId);
+                            let nextCameraIndex = (currentCameraIndex + 1) % cameras.length;
+                            cameraId = cameras[nextCameraIndex].id;
+                            
+                            if (document.getElementById('stopScanBtn').classList.contains('d-none')) {
+                                // ถ้า scanner ถูกหยุดอยู่ ให้เริ่มใหม่ด้วยกล้องใหม่
+                                document.getElementById('startScanBtn').click();
+                            } else {
+                                // ถ้า scanner กำลังทำงานอยู่ ให้รีสตาร์ทด้วยกล้องใหม่
+                                startScanner();
+                            }
+                        }
+                    }).catch(err => {
+                        console.error('Error getting cameras:', err);
+                        showFeedback('ไม่สามารถเข้าถึงกล้องได้', 'error');
+                    });
+                }
+            });
+            
+            // เมื่อเลือกกิจกรรม/รายวิชาใหม่
+            document.getElementById('eventSelect').addEventListener('change', function() {
+                selectedEventId = this.value;
+                if (selectedEventId) {
+                    loadAttendanceList(selectedEventId);
+                } else {
+                    // ไม่ได้เลือกกิจกรรม
+                    document.getElementById('attendanceList').innerHTML = `
+                        <li class="list-group-item text-center text-muted">
+                            <i class="fas fa-info-circle me-1"></i>กรุณาเลือกกิจกรรม/รายวิชา
+                        </li>
+                    `;
+                    updateAttendanceCounts(0, 0, 0);
+                }
+            });
+            
+            // ค้นหารายชื่อ
+            document.getElementById('searchInput').addEventListener('input', function() {
+                const searchText = this.value.toLowerCase();
+                const listItems = document.querySelectorAll('#attendanceList li');
+                
+                listItems.forEach(item => {
+                    const text = item.textContent.toLowerCase();
+                    if (text.includes(searchText)) {
+                        item.style.display = '';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+            
+            // บันทึกด้วยตนเอง
+            document.getElementById('manualForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // ตรวจสอบว่าได้เลือกกิจกรรมหรือไม่
+                selectedEventId = document.getElementById('eventSelect').value;
+                if (!selectedEventId) {
+                    showFeedback('กรุณาเลือกกิจกรรม/รายวิชาก่อนบันทึก', 'warning');
+                    return;
+                }
+                
+                const studentId = document.getElementById('manualStudentId').value;
+                const status = document.getElementById('manualStatus').value;
+                const notes = document.getElementById('manualNotes').value;
+                
+                if (!studentId) {
+                    showFeedback('กรุณาระบุรหัสนักศึกษา', 'warning');
+                    return;
+                }
+                
+                // แสดง loading
+                showLoading();
+                
+                // ส่งข้อมูลไปยัง API
+                fetch('/api/attendance', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        eventId: selectedEventId,
+                        studentId: studentId,
+                        status: status,
+                        notes: notes
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    
+                    if (data.success) {
+                        showFeedback('บันทึกข้อมูลสำเร็จ', 'success');
+                        document.getElementById('manualForm').reset();
+                        
+                        // โหลดรายชื่อใหม่
+                        loadAttendanceList(selectedEventId);
+                    } else {
+                        showFeedback(data.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล', 'error');
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    console.error('Error submitting manual attendance:', error);
+                    showFeedback('เกิดข้อผิดพลาดในการติดต่อกับเซิร์ฟเวอร์', 'error');
+                });
+            });
+            
+            // ออกจากระบบ
+            document.getElementById('logoutBtn').addEventListener('click', function(e) {
+                e.preventDefault();
+                logout();
+            });
+            
+            // ฟังก์ชันเริ่ม scanner
+            function startScanner() {
+                // ตรวจสอบว่ามี scanner อยู่แล้วหรือไม่
+                if (html5QrCodeScanner) {
+                    html5QrCodeScanner.clear();
+                }
+                
+                const qrReader = document.getElementById('qr-reader');
+                
+                // สร้าง instance ใหม่ของ scanner
+                html5QrCodeScanner = new Html5Qrcode('qr-reader');
+                
+                // ดึงรายการกล้องที่มี
+                Html5Qrcode.getCameras().then(cameras => {
+                    if (cameras && cameras.length) {
+                        // ถ้าไม่มีการเลือกกล้องก่อนหน้า ให้ใช้กล้องแรก
+                        if (!cameraId) {
+                            cameraId = cameras[0].id;
+                        }
+                        
+                        // กำหนดค่า configuration
+                        const config = {
+                            fps: 10,
+                            qrbox: { width: 250, height: 250 },
+                            aspectRatio: 1.0
+                        };
+                        
+                        // เริ่ม scanner
+                        html5QrCodeScanner.start(
+                            cameraId,
+                            config,
+                            onQRCodeSuccess,
+                            onQRCodeError
+                        )
+                        .catch(err => {
+                            console.error('Error starting scanner:', err);
+                            showFeedback('ไม่สามารถเริ่มกล้องได้ กรุณาอนุญาตการใช้กล้อง', 'error');
+                            document.getElementById('stopScanBtn').classList.add('d-none');
+                            document.getElementById('startScanBtn').classList.remove('d-none');
+                        });
+                    } else {
+                        showFeedback('ไม่พบกล้องในอุปกรณ์นี้', 'error');
+                    }
+                }).catch(err => {
+                    console.error('Error getting cameras:', err);
+                    showFeedback('ไม่สามารถเข้าถึงกล้องได้', 'error');
+                });
+            }
+            
+            // ฟังก์ชันหยุด scanner
+            function stopScanner() {
+                if (html5QrCodeScanner) {
+                    html5QrCodeScanner.stop().then(() => {
+                        console.log('Scanner stopped');
+                    }).catch(err => {
+                        console.error('Error stopping scanner:', err);
+                    });
+                }
+            }
+            
+            // ฟังก์ชันเมื่อสแกน QR Code สำเร็จ
+            function onQRCodeSuccess(decodedText, decodedResult) {
+                // ตรวจสอบว่าได้เลือกกิจกรรมหรือไม่
+                if (!selectedEventId) {
+                    showFeedback('กรุณาเลือกกิจกรรม/รายวิชาก่อนสแกน', 'warning');
+                    return;
+                }
+                
+                console.log('QR Code decoded successfully:', decodedText);
+                
+                // แสดง overlay และ loading
+                document.getElementById('scanner-overlay').classList.remove('d-none');
+                
+                // ประมวลผล QR Code
+                processQRCode(decodedText);
+            }
+            
+            // ฟังก์ชันเมื่อเกิดข้อผิดพลาดในการสแกน QR Code
+            function onQRCodeError(error) {
+                // ไม่ต้องแสดงข้อผิดพลาดทุกครั้ง เพราะจะทำงานต่อเนื่องตลอดเวลา
+                console.error('QR Code scanning error:', error);
+            }
+            
+            // ฟังก์ชันสำหรับประมวลผล QR Code
+            function processQRCode(qrData) {
+                fetch('/api/process-qrcode', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        qrData: qrData,
+                        eventId: selectedEventId
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // ซ่อน overlay
+                    document.getElementById('scanner-overlay').classList.add('d-none');
+                    
+                    if (data.success) {
+                        // แสดงข้อมูลนักศึกษา
+                        displayStudentInfo(data.studentInfo, data.isCheckOut);
+                        
+                        // แสดงข้อความแจ้งเตือน
+                        showFeedback(data.message, 'success');
+                        
+                        // โหลดรายชื่อใหม่
+                        loadAttendanceList(selectedEventId);
+                    } else {
+                        // ซ่อนข้อมูลนักศึกษา
+                        document.getElementById('studentInfo').style.display = 'none';
+                        
+                        // แสดงข้อความแจ้งเตือนข้อผิดพลาด
+                        showFeedback(data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    // ซ่อน overlay
+                    document.getElementById('scanner-overlay').classList.add('d-none');
+                    
+                    console.error('Error processing QR code:', error);
+                    showFeedback('เกิดข้อผิดพลาดในการประมวลผล QR Code', 'error');
+                });
+            }
+            
+            // ฟังก์ชันสำหรับแสดงข้อมูลนักศึกษา
+            function displayStudentInfo(studentInfo, isCheckOut) {
+                const studentInfoElement = document.getElementById('studentInfo');
+                
+                document.getElementById('studentId').textContent = studentInfo.studentId || '-';
+                document.getElementById('studentName').textContent = studentInfo.name || '-';
+                document.getElementById('faculty').textContent = studentInfo.faculty || '-';
+                document.getElementById('department').textContent = studentInfo.department || '-';
+                
+                // กำหนดสถานะ
+                let statusText = '';
+                if (isCheckOut) {
+                    statusText = 'ออกจากกิจกรรม';
+                    studentInfoElement.className = 'student-info success';
+                } else {
+                    if (studentInfo.status === 'late') {
+                        statusText = 'มาสาย';
+                        studentInfoElement.className = 'student-info late';
+                    } else {
+                        statusText = 'มาเรียน';
+                        studentInfoElement.className = 'student-info success';
+                    }
+                }
+                document.getElementById('status').textContent = statusText;
+                
+                // กำหนดเวลา
+                const time = isCheckOut ? studentInfo.checkOutTime : studentInfo.checkInTime;
+                const formattedTime = new Date(time).toLocaleTimeString('th-TH');
+                document.getElementById('checkTime').textContent = formattedTime;
+                
+                // แสดงข้อมูล
+                studentInfoElement.style.display = 'block';
+            }
+            
+            // ฟังก์ชันสำหรับโหลดรายการกิจกรรม/รายวิชา
+            function loadEvents() {
+                showLoading();
+                
+                fetch('/api/events?status=active')
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    
+                    if (data.success) {
+                        const eventSelect = document.getElementById('eventSelect');
+                        eventSelect.innerHTML = '<option value="">-- เลือกกิจกรรม/รายวิชา --</option>';
+                        
+                        // กรองเฉพาะกิจกรรมที่ยังไม่สิ้นสุด
+                        const now = new Date();
+                        const activeEvents = data.events.filter(event => new Date(event.end_time) > now);
+                        
+                        // เรียงลำดับตามเวลาเริ่มต้น (ล่าสุดขึ้นก่อน)
+                        activeEvents.sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
+                        
+                        activeEvents.forEach(event => {
+                            const startDate = new Date(event.start_time);
+                            const formattedDate = startDate.toLocaleDateString('th-TH', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric'
+                            });
+                            
+                            const option = document.createElement('option');
+                            option.value = event.id;
+                            option.textContent = `${event.event_name} (${formattedDate})`;
+                            eventSelect.appendChild(option);
+                        });
+                        
+                        if (activeEvents.length === 0) {
+                            const option = document.createElement('option');
+                            option.value = '';
+                            option.textContent = 'ไม่พบกิจกรรม/รายวิชาที่กำลังดำเนินการอยู่';
+                            option.disabled = true;
+                            eventSelect.appendChild(option);
+                        }
+                    } else {
+                        showFeedback('ไม่สามารถโหลดรายการกิจกรรมได้', 'error');
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    console.error('Error loading events:', error);
+                    showFeedback('เกิดข้อผิดพลาดในการโหลดรายการกิจกรรม', 'error');
+                });
+            }
+            
+            // ฟังก์ชันสำหรับโหลดรายชื่อผู้เข้าร่วม
+            function loadAttendanceList(eventId) {
+                if (!eventId) return;
+                
+                fetch(`/api/events/${eventId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const attendanceList = document.getElementById('attendanceList');
+                        const attendance = data.attendance;
+                        
+                        if (attendance.length === 0) {
+                            attendanceList.innerHTML = `
+                                <li class="list-group-item text-center text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>ยังไม่มีผู้เข้าร่วมกิจกรรม
+                                </li>
+                            `;
+                            updateAttendanceCounts(0, 0, 0);
+                            return;
+                        }
+                        
+                        // เรียงลำดับตามเวลาล่าสุดขึ้นก่อน
+                        attendance.sort((a, b) => new Date(b.check_in_time) - new Date(a.check_in_time));
+                        
+                        // นับจำนวนผู้เข้าร่วมตามสถานะ
+                        const presentCount = attendance.filter(a => a.status === 'present').length;
+                        const lateCount = attendance.filter(a => a.status === 'late').length;
+                        const totalCount = attendance.length;
+                        
+                        updateAttendanceCounts(presentCount, lateCount, totalCount);
+                        
+                        // สร้างรายการ
+                        attendanceList.innerHTML = '';
+                        attendance.forEach(record => {
+                            const checkInTime = new Date(record.check_in_time);
+                            const formattedTime = checkInTime.toLocaleTimeString('th-TH', {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                            
+                            let statusBadge = '';
+                            if (record.status === 'present') {
+                                statusBadge = '<span class="badge bg-success">มาเรียน</span>';
+                            } else if (record.status === 'late') {
+                                statusBadge = '<span class="badge bg-warning text-dark">มาสาย</span>';
+                            } else if (record.status === 'absent') {
+                                statusBadge = '<span class="badge bg-danger">ขาดเรียน</span>';
+                            } else if (record.status === 'excused') {
+                                statusBadge = '<span class="badge bg-info">ลา</span>';
+                            }
+                            
+                            const listItem = document.createElement('li');
+                            listItem.className = 'list-group-item';
+                            listItem.innerHTML = `
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>${record.student_id}</strong> - ${record.student_name || '-'}
+                                        <div class="text-muted small">${record.faculty || '-'} / ${record.department || '-'}</div>
+                                    </div>
+                                    <div class="text-end">
+                                        ${statusBadge}
+                                        <div class="text-muted small">${formattedTime}</div>
+                                    </div>
+                                </div>
+                            `;
+                            attendanceList.appendChild(listItem);
+                        });
+                    } else {
+                        showFeedback('ไม่สามารถโหลดรายชื่อผู้เข้าร่วมได้', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading attendance list:', error);
+                    showFeedback('เกิดข้อผิดพลาดในการโหลดรายชื่อผู้เข้าร่วม', 'error');
+                });
+            }
+            
+            // ฟังก์ชันสำหรับอัปเดตจำนวนผู้เข้าร่วม
+            function updateAttendanceCounts(present, late, total) {
+                document.getElementById('presentCount').textContent = present;
+                document.getElementById('lateCount').textContent = late;
+                document.getElementById('totalCount').textContent = total;
+            }
+            
+            // ฟังก์ชันสำหรับแสดงข้อความแจ้งเตือน
+            function showFeedback(message, type) {
+                const container = document.querySelector('.feedback-container');
+                const toast = document.createElement('div');
+                toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'danger'} border-0`;
+                toast.setAttribute('role', 'alert');
+                toast.setAttribute('aria-live', 'assertive');
+                toast.setAttribute('aria-atomic', 'true');
+                
+                if (type === 'warning') {
+                    toast.classList.remove('text-white');
+                    toast.classList.add('text-dark');
+                }
+                
+                toast.innerHTML = `
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                `;
+                
+                container.appendChild(toast);
+                
+                const bsToast = new bootstrap.Toast(toast, {
+                    autohide: true,
+                    delay: 3000
+                });
+                
+                bsToast.show();
+                
+                // เมื่อ toast ถูกซ่อน ให้ลบออกจาก DOM
+                toast.addEventListener('hidden.bs.toast', function() {
+                    toast.remove();
+                });
+            }
+            
+            // ฟังก์ชันสำหรับแสดง loading
+            function showLoading() {
+                document.getElementById('loadingOverlay').style.display = 'flex';
+            }
+            
+            // ฟังก์ชันสำหรับซ่อน loading
+            function hideLoading() {
+                document.getElementById('loadingOverlay').style.display = 'none';
+            }
+            
+            // ฟังก์ชันตรวจสอบสถานะการล็อกอิน
+            function checkAuthentication() {
+                showLoading();
+                
+                fetch('/api/login', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    hideLoading();
+                    
+                    if (response.status === 401) {
+                        // ไม่ได้ล็อกอิน ให้ redirect ไปหน้าล็อกอิน
+                        window.location.href = '/login';
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    console.error('Error checking authentication:', error);
+                    showFeedback('เกิดข้อผิดพลาดในการตรวจสอบสถานะการล็อกอิน', 'error');
+                });
+            }
+            
+            // ฟังก์ชันออกจากระบบ
+            function logout() {
+                showLoading();
+                
+                fetch('/api/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    
+                    if (data.success) {
+                        // ออกจากระบบสำเร็จ ให้ redirect ไปหน้าล็อกอิน
+                        window.location.href = '/login';
+                    } else {
+                        showFeedback(data.message || 'เกิดข้อผิดพลาดในการออกจากระบบ', 'error');
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    console.error('Error logging out:', error);
+                    showFeedback('เกิดข้อผิดพลาดในการออกจากระบบ', 'error');
+                });
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,101 @@
+# Data Dictionary - ระบบเช็คชื่อนักศึกษาด้วย QR Code
+
+## 1. ตารางกิจกรรม (events)
+
+| คอลัมน์ | ประเภทข้อมูล | คำอธิบาย | ข้อมูลเพิ่มเติม |
+|---------|------------|---------|--------------|
+| id | INT | รหัสกิจกรรม | Primary Key, Auto Increment |
+| event_name | VARCHAR(200) | ชื่อกิจกรรมหรือรายวิชา | Not Null |
+| event_type | VARCHAR(50) | ประเภทกิจกรรม | Check Constraint ('class', 'activity', 'seminar', 'exam', 'other') |
+| location | VARCHAR(200) | สถานที่จัดกิจกรรม | - |
+| start_time | TIMESTAMP | เวลาเริ่มต้นกิจกรรม | Not Null |
+| end_time | TIMESTAMP | เวลาสิ้นสุดกิจกรรม | Not Null |
+| description | TEXT | รายละเอียดของกิจกรรม | - |
+| faculty | VARCHAR(100) | คณะที่จัดกิจกรรม | - |
+| department | VARCHAR(100) | สาขาที่จัดกิจกรรม | - |
+| year_level | VARCHAR(20) | ชั้นปีที่กิจกรรมจัดให้ | - |
+| created_by | VARCHAR(100) | ผู้สร้างกิจกรรม | - |
+| created_at | TIMESTAMP | วันเวลาที่สร้างกิจกรรม | Default: Current Timestamp |
+| status | VARCHAR(20) | สถานะของกิจกรรม | Default: 'active', Check Constraint ('active', 'cancelled', 'completed') |
+
+## 2. ตารางบันทึกการเข้าร่วม (attendance_records)
+
+| คอลัมน์ | ประเภทข้อมูล | คำอธิบาย | ข้อมูลเพิ่มเติม |
+|---------|------------|---------|--------------|
+| id | INT | รหัสการบันทึก | Primary Key, Auto Increment |
+| event_id | INT | รหัสกิจกรรม | Foreign Key references events(id) |
+| student_id | VARCHAR(50) | รหัสนักศึกษา | Not Null |
+| student_name | VARCHAR(200) | ชื่อ-นามสกุลนักศึกษา | - |
+| faculty | VARCHAR(100) | คณะของนักศึกษา | - |
+| department | VARCHAR(100) | สาขาของนักศึกษา | - |
+| check_in_time | TIMESTAMP | เวลาเข้าร่วมกิจกรรม | Default: Current Timestamp |
+| check_out_time | TIMESTAMP | เวลาออกจากกิจกรรม | - |
+| status | VARCHAR(20) | สถานะการเข้าร่วม | Default: 'present', Check Constraint ('present', 'late', 'absent', 'excused') |
+| recorded_by | VARCHAR(100) | ผู้บันทึกข้อมูล | - |
+| notes | TEXT | บันทึกเพิ่มเติม | - |
+
+**ข้อจำกัด**: มี UNIQUE Constraint (event_id, student_id) เพื่อป้องกันการบันทึกซ้ำ
+
+## 3. ตารางผู้ใช้งานระบบ (admin_users)
+
+| คอลัมน์ | ประเภทข้อมูล | คำอธิบาย | ข้อมูลเพิ่มเติม |
+|---------|------------|---------|--------------|
+| id | INT | รหัสผู้ใช้งาน | Primary Key, Auto Increment |
+| username | VARCHAR(100) | ชื่อผู้ใช้งาน | Not Null, Unique |
+| password_hash | VARCHAR(200) | รหัสผ่านที่เข้ารหัสแล้ว | Not Null, ใช้ bcrypt |
+| fullname | VARCHAR(200) | ชื่อ-นามสกุล | - |
+| email | VARCHAR(200) | อีเมล | - |
+| role | VARCHAR(50) | บทบาทในระบบ | Default: 'staff', Check Constraint ('admin', 'staff', 'teacher') |
+| department | VARCHAR(100) | สาขาของผู้ใช้งาน | - |
+| faculty | VARCHAR(100) | คณะของผู้ใช้งาน | - |
+| created_at | TIMESTAMP | วันเวลาที่สร้างบัญชี | Default: Current Timestamp |
+| last_login | TIMESTAMP | วันเวลาเข้าสู่ระบบล่าสุด | - |
+| status | VARCHAR(20) | สถานะบัญชี | Default: 'active', Check Constraint ('active', 'inactive') |
+
+## 4. ตารางประวัติการใช้งานระบบ (system_logs)
+
+| คอลัมน์ | ประเภทข้อมูล | คำอธิบาย | ข้อมูลเพิ่มเติม |
+|---------|------------|---------|--------------|
+| id | INT | รหัสบันทึก | Primary Key, Auto Increment |
+| action | VARCHAR(50) | การกระทำในระบบ | Not Null |
+| description | TEXT | รายละเอียดของการกระทำ | - |
+| user_id | INT | รหัสผู้ใช้งานที่ทำรายการ | Foreign Key references admin_users(id) |
+| ip_address | VARCHAR(50) | IP address ที่ใช้งาน | - |
+| created_at | TIMESTAMP | วันเวลาที่ทำรายการ | Default: Current Timestamp |
+
+## 5. ตารางข้อมูลนักศึกษา (student_details)
+
+| คอลัมน์ | ประเภทข้อมูล | คำอธิบาย | ข้อมูลเพิ่มเติม |
+|---------|------------|---------|--------------|
+| student_id | VARCHAR(50) | รหัสนักศึกษา | Primary Key |
+| first_name | VARCHAR(100) | ชื่อนักศึกษา | - |
+| last_name | VARCHAR(100) | นามสกุลนักศึกษา | - |
+| faculty | VARCHAR(100) | คณะ | - |
+| department | VARCHAR(100) | สาขา | - |
+| year_level | VARCHAR(20) | ชั้นปี | - |
+| enrollment_date | TIMESTAMP | วันที่ลงทะเบียน | - |
+| expiry_date | TIMESTAMP | วันหมดอายุบัตร | - |
+| student_status | VARCHAR(50) | สถานะของนักศึกษา | - |
+| profile_image | VARCHAR(255) | URL รูปโปรไฟล์ | - |
+
+## ความสัมพันธ์ระหว่างตาราง (Relationships)
+
+1. **events - attendance_records**: One-to-Many (1:N)
+   - กิจกรรมหนึ่งกิจกรรมสามารถมีผู้เข้าร่วมได้หลายคน
+   - Foreign key: attendance_records.event_id references events.id
+
+2. **admin_users - events**: One-to-Many (1:N)
+   - ผู้ใช้งานระบบหนึ่งคนสามารถสร้างกิจกรรมได้หลายกิจกรรม
+   - Logical relationship via events.created_by
+
+3. **admin_users - system_logs**: One-to-Many (1:N)
+   - ผู้ใช้งานระบบหนึ่งคนสามารถมีประวัติการใช้งานได้หลายรายการ
+   - Foreign key: system_logs.user_id references admin_users.id
+
+4. **admin_users - attendance_records**: One-to-Many (1:N)
+   - ผู้ใช้งานระบบหนึ่งคนสามารถบันทึกการเข้าร่วมได้หลายรายการ
+   - Logical relationship via attendance_records.recorded_by
+
+5. **student_details - attendance_records**: One-to-Many (1:N)
+   - นักศึกษาหนึ่งคนสามารถเข้าร่วมกิจกรรมได้หลายกิจกรรม
+   - Logical relationship via attendance_records.student_id

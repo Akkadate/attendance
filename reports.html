@@ -1,0 +1,1576 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>รายงาน - ระบบเช็คชื่อนักศึกษา</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts - Prompt -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <!-- Flatpickr - Date Time Picker -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: #f8f9fa;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .navbar-brand {
+            font-weight: 600;
+        }
+        .navbar {
+            background-color: #0a2463 !important;
+        }
+        .main-content {
+            flex: 1;
+            padding: 20px 0;
+        }
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .card-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            font-weight: 500;
+        }
+        .nav-tabs .nav-link {
+            border: none;
+            color: #495057;
+            padding: 10px 15px;
+            border-radius: 0;
+            font-weight: 500;
+            margin-right: 5px;
+        }
+        .nav-tabs .nav-link.active {
+            color: #0a2463;
+            background-color: #fff;
+            border-bottom: 3px solid #0a2463;
+        }
+        .filter-container {
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        .form-select, .form-control {
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .btn-sm {
+            border-radius: 4px;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+        .table th {
+            font-weight: 500;
+            background-color: #f8f9fa;
+        }
+        .feedback-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1050;
+            min-width: 300px;
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            display: none;
+        }
+        .spinner-container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 20px;
+        }
+        .attendance-stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            flex: 1;
+            min-width: 200px;
+            padding: 15px;
+            border-radius: 10px;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+        .stat-card h4 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .stat-card p {
+            margin: 5px 0 0;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        .stat-card.present {
+            border-top: 4px solid #28a745;
+        }
+        .stat-card.late {
+            border-top: 4px solid #ffc107;
+        }
+        .stat-card.absent {
+            border-top: 4px solid #dc3545;
+        }
+        .stat-card.total {
+            border-top: 4px solid #0a2463;
+        }
+        .student-profile {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .student-info {
+            flex: 1;
+        }
+        .student-photo {
+            width: 80px;
+            height: 80px;
+            margin-right: 15px;
+            border-radius: 50%;
+            overflow: hidden;
+            background-color: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #adb5bd;
+            font-size: 36px;
+        }
+        .student-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .flatpickr-input {
+            background-color: #fff !important;
+        }
+        .progress {
+            height: 10px;
+            border-radius: 5px;
+        }
+        .table-responsive {
+            min-height: 200px;
+        }
+        footer {
+            background-color: #f8f9fa;
+            padding: 10px 0;
+            text-align: center;
+            margin-top: auto;
+            font-size: 14px;
+            color: #6c757d;
+            border-top: 1px solid #e9ecef;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 30px 0;
+            color: #6c757d;
+        }
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+        @media (max-width: 576px) {
+            .container {
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+            .card {
+                border-radius: 5px;
+            }
+            .stat-card {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-qrcode me-2"></i>ระบบเช็คชื่อนักศึกษา
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/scan">
+                            <i class="fas fa-camera me-1"></i> สแกน QR Code
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/events">
+                            <i class="fas fa-calendar-alt me-1"></i> จัดการกิจกรรม
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/reports">
+                            <i class="fas fa-chart-bar me-1"></i> รายงาน
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="logoutBtn">
+                            <i class="fas fa-sign-out-alt me-1"></i> ออกจากระบบ
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="container">
+            <h2 class="mb-4">รายงาน</h2>
+
+            <ul class="nav nav-tabs mb-4" id="reportTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="summary-tab" data-bs-toggle="tab" data-bs-target="#summary-tab-pane" type="button" role="tab" aria-controls="summary-tab-pane" aria-selected="true">
+                        <i class="fas fa-chart-pie me-1"></i> ภาพรวม
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="events-tab" data-bs-toggle="tab" data-bs-target="#events-tab-pane" type="button" role="tab" aria-controls="events-tab-pane" aria-selected="false">
+                        <i class="fas fa-list-check me-1"></i> รายกิจกรรม
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="students-tab" data-bs-toggle="tab" data-bs-target="#students-tab-pane" type="button" role="tab" aria-controls="students-tab-pane" aria-selected="false">
+                        <i class="fas fa-user-graduate me-1"></i> รายบุคคล
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="reportTabContent">
+                <!-- ภาพรวม -->
+                <div class="tab-pane fade show active" id="summary-tab-pane" role="tabpanel" aria-labelledby="summary-tab" tabindex="0">
+                    <div class="filter-container">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="summaryDateRange" class="form-label">ช่วงเวลา</label>
+                                    <input type="text" class="form-control" id="summaryDateRange" placeholder="เลือกช่วงเวลา">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="summaryFaculty" class="form-label">คณะ</label>
+                                    <input type="text" class="form-control" id="summaryFaculty" placeholder="ระบุคณะ">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="summaryDepartment" class="form-label">สาขา</label>
+                                    <input type="text" class="form-control" id="summaryDepartment" placeholder="ระบุสาขา">
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="mb-3">
+                                    <label class="form-label">&nbsp;</label>
+                                    <button id="applySummaryFilterBtn" class="btn btn-primary form-control">
+                                        <i class="fas fa-filter me-1"></i> กรอง
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="attendance-stats">
+                        <div class="stat-card present">
+                            <h4 id="presentCount">0</h4>
+                            <p>มาเรียน</p>
+                        </div>
+                        <div class="stat-card late">
+                            <h4 id="lateCount">0</h4>
+                            <p>มาสาย</p>
+                        </div>
+                        <div class="stat-card absent">
+                            <h4 id="absentCount">0</h4>
+                            <p>ขาด/ลา</p>
+                        </div>
+                        <div class="stat-card total">
+                            <h4 id="totalAttendance">0</h4>
+                            <p>รวมทั้งสิ้น</p>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <i class="fas fa-chart-column me-2"></i>จำนวนการเข้าร่วมตามกิจกรรม
+                                </div>
+                                <div class="card-body">
+                                    <div class="chart-container">
+                                        <canvas id="eventChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <i class="fas fa-chart-pie me-2"></i>สัดส่วนการเข้าร่วมกิจกรรม
+                                </div>
+                                <div class="card-body">
+                                    <div class="chart-container">
+                                        <canvas id="statusChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <i class="fas fa-list-ul me-2"></i>สรุปการเข้าร่วมตามกิจกรรม
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>กิจกรรม/รายวิชา</th>
+                                            <th>ประเภท</th>
+                                            <th>วันที่</th>
+                                            <th>มาเรียน</th>
+                                            <th>มาสาย</th>
+                                            <th>ขาด/ลา</th>
+                                            <th>รวม</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="summaryTableBody">
+                                        <!-- ข้อมูลจะถูกเพิ่มที่นี่ -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- รายกิจกรรม -->
+                <div class="tab-pane fade" id="events-tab-pane" role="tabpanel" aria-labelledby="events-tab" tabindex="0">
+                    <div class="filter-container">
+                        <div class="row">
+                            <div class="col-md-10">
+                                <div class="mb-3">
+                                    <label for="eventSelect" class="form-label">เลือกกิจกรรม/รายวิชา</label>
+                                    <select class="form-select" id="eventSelect">
+                                        <option value="">-- กรุณาเลือกกิจกรรม/รายวิชา --</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="mb-3">
+                                    <label class="form-label">&nbsp;</label>
+                                    <button id="exportEventReportBtn" class="btn btn-primary form-control">
+                                        <i class="fas fa-file-export me-1"></i> ส่งออก
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="eventDetail" class="card mb-4 d-none">
+                        <div class="card-header">
+                            <i class="fas fa-info-circle me-2"></i>ข้อมูลกิจกรรม
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>ชื่อกิจกรรม:</strong> <span id="eventDetailName">-</span></p>
+                                    <p><strong>ประเภท:</strong> <span id="eventDetailType">-</span></p>
+                                    <p><strong>สถานที่:</strong> <span id="eventDetailLocation">-</span></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>วันที่:</strong> <span id="eventDetailDate">-</span></p>
+                                    <p><strong>เวลา:</strong> <span id="eventDetailTime">-</span></p>
+                                    <p><strong>สถานะ:</strong> <span id="eventDetailStatus">-</span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="eventStats" class="attendance-stats d-none">
+                        <div class="stat-card present">
+                            <h4 id="eventPresentCount">0</h4>
+                            <p>มาเรียน</p>
+                        </div>
+                        <div class="stat-card late">
+                            <h4 id="eventLateCount">0</h4>
+                            <p>มาสาย</p>
+                        </div>
+                        <div class="stat-card absent">
+                            <h4 id="eventAbsentCount">0</h4>
+                            <p>ขาด/ลา</p>
+                        </div>
+                        <div class="stat-card total">
+                            <h4 id="eventTotalCount">0</h4>
+                            <p>รวมทั้งสิ้น</p>
+                        </div>
+                    </div>
+
+                    <div id="eventAttendanceTable" class="card d-none">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span><i class="fas fa-clipboard-list me-2"></i>รายชื่อผู้เข้าร่วมกิจกรรม</span>
+                            <div>
+                                <input type="text" id="eventAttendanceSearch" class="form-control form-control-sm" placeholder="ค้นหา...">
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>รหัสนักศึกษา</th>
+                                            <th>ชื่อ-นามสกุล</th>
+                                            <th>คณะ/สาขา</th>
+                                            <th>เวลาเข้า</th>
+                                            <th>เวลาออก</th>
+                                            <th>สถานะ</th>
+                                            <th>บันทึกเพิ่มเติม</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="eventAttendanceTableBody">
+                                        <!-- ข้อมูลจะถูกเพิ่มที่นี่ -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="noEventSelected" class="empty-state">
+                        <i class="fas fa-calendar-day"></i>
+                        <p>กรุณาเลือกกิจกรรม/รายวิชาเพื่อดูรายงาน</p>
+                    </div>
+                </div>
+
+                <!-- รายบุคคล -->
+                <div class="tab-pane fade" id="students-tab-pane" role="tabpanel" aria-labelledby="students-tab" tabindex="0">
+                    <div class="filter-container">
+                        <div class="row">
+                            <div class="col-md-5">
+                                <div class="mb-3">
+                                    <label for="studentIdSearch" class="form-label">รหัสนักศึกษา</label>
+                                    <input type="text" class="form-control" id="studentIdSearch" placeholder="ระบุรหัสนักศึกษา">
+                                </div>
+                            </div>
+                            <div class="col-md-5">
+                                <div class="mb-3">
+                                    <label for="studentDateRange" class="form-label">ช่วงเวลา</label>
+                                    <input type="text" class="form-control" id="studentDateRange" placeholder="เลือกช่วงเวลา">
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="mb-3">
+                                    <label class="form-label">&nbsp;</label>
+                                    <button id="searchStudentBtn" class="btn btn-primary form-control">
+                                        <i class="fas fa-search me-1"></i> ค้นหา
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="studentDetail" class="card mb-4 d-none">
+                        <div class="card-header">
+                            <i class="fas fa-user-circle me-2"></i>ข้อมูลนักศึกษา
+                        </div>
+                        <div class="card-body">
+                            <div class="student-profile">
+                                <div class="student-photo">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div class="student-info">
+                                    <h4 id="studentName">-</h4>
+                                    <p class="mb-0"><strong>รหัสนักศึกษา:</strong> <span id="studentId">-</span></p>
+                                    <p class="mb-0"><strong>คณะ/สาขา:</strong> <span id="studentFaculty">-</span> / <span id="studentDepartment">-</span></p>
+                                </div>
+                            </div>
+
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">สรุปการเข้าร่วมกิจกรรม</label>
+                                        <div class="progress mb-2">
+                                            <div id="studentPresentBar" class="progress-bar bg-success" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                            <div id="studentLateBar" class="progress-bar bg-warning" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                            <div id="studentAbsentBar" class="progress-bar bg-danger" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                        <div class="d-flex justify-content-between small">
+                                            <div><span class="text-success">■</span> มาเรียน: <span id="studentPresentCount">0</span></div>
+                                            <div><span class="text-warning">■</span> มาสาย: <span id="studentLateCount">0</span></div>
+                                            <div><span class="text-danger">■</span> ขาด/ลา: <span id="studentAbsentCount">0</span></div>
+                                            <div>รวม: <span id="studentTotalCount">0</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 text-end">
+                                    <button id="exportStudentReportBtn" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-file-export me-1"></i> ส่งออกประวัติการเข้าร่วม
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="studentAttendanceTable" class="card d-none">
+                        <div class="card-header">
+                            <i class="fas fa-history me-2"></i>ประวัติการเข้าร่วมกิจกรรม
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>วันที่</th>
+                                            <th>กิจกรรม/รายวิชา</th>
+                                            <th>ประเภท</th>
+                                            <th>เวลาเข้า</th>
+                                            <th>เวลาออก</th>
+                                            <th>สถานะ</th>
+                                            <th>หมายเหตุ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="studentAttendanceTableBody">
+                                        <!-- ข้อมูลจะถูกเพิ่มที่นี่ -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="noStudentSearched" class="empty-state">
+                        <i class="fas fa-user-graduate"></i>
+                        <p>กรุณาระบุรหัสนักศึกษาเพื่อดูรายงาน</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p class="mb-0">© 2025 ระบบเช็คชื่อนักศึกษาด้วย QR Code - มหาวิทยาลัยนอร์ทกรุงเทพ</p>
+        </div>
+    </footer>
+
+    <!-- Feedback Toast Container -->
+    <div class="feedback-container"></div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="spinner-container">
+            <div class="spinner-border text-primary mb-2" role="status"></div>
+            <div>กำลังประมวลผล...</div>
+        </div>
+    </div>
+
+    <!-- Bootstrap & Required JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Flatpickr - Date Time Picker -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/th.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // ตรวจสอบว่ามีการล็อกอินหรือไม่
+            checkAuthentication();
+            
+            // กำหนดตัวแปรสำหรับเก็บข้อมูลต่างๆ
+            let summaryData = [];
+            let eventsList = [];
+            let selectedEvent = null;
+            let studentAttendance = [];
+            let charts = {}; // สำหรับเก็บ Chart.js instances
+            
+            // กำหนดค่า Flatpickr สำหรับช่วงเวลา
+            flatpickr("#summaryDateRange", {
+                mode: "range",
+                dateFormat: "Y-m-d",
+                locale: "th",
+                allowInput: true
+            });
+            
+            flatpickr("#studentDateRange", {
+                mode: "range",
+                dateFormat: "Y-m-d",
+                locale: "th",
+                allowInput: true
+            });
+            
+            // Event Listeners
+            document.getElementById('applySummaryFilterBtn').addEventListener('click', function() {
+                loadSummaryData();
+            });
+            
+            document.getElementById('eventSelect').addEventListener('change', function() {
+                const eventId = this.value;
+                if (eventId) {
+                    loadEventDetail(eventId);
+                } else {
+                    // ซ่อนข้อมูลกิจกรรม
+                    document.getElementById('eventDetail').classList.add('d-none');
+                    document.getElementById('eventStats').classList.add('d-none');
+                    document.getElementById('eventAttendanceTable').classList.add('d-none');
+                    document.getElementById('noEventSelected').classList.remove('d-none');
+                }
+            });
+            
+            document.getElementById('searchStudentBtn').addEventListener('click', function() {
+                const studentId = document.getElementById('studentIdSearch').value;
+                if (studentId) {
+                    loadStudentDetail(studentId);
+                } else {
+                    showFeedback('กรุณาระบุรหัสนักศึกษา', 'warning');
+                }
+            });
+            
+            document.getElementById('exportEventReportBtn').addEventListener('click', function() {
+                if (selectedEvent) {
+                    exportEventReport(selectedEvent.id);
+                } else {
+                    showFeedback('กรุณาเลือกกิจกรรมก่อนส่งออกรายงาน', 'warning');
+                }
+            });
+            
+            document.getElementById('exportStudentReportBtn').addEventListener('click', function() {
+                const studentId = document.getElementById('studentId').textContent;
+                if (studentId && studentId !== '-') {
+                    exportStudentReport(studentId);
+                } else {
+                    showFeedback('ไม่พบข้อมูลนักศึกษา', 'warning');
+                }
+            });
+            
+            // ค้นหารายชื่อในตารางกิจกรรม
+            document.getElementById('eventAttendanceSearch').addEventListener('input', function() {
+                const searchText = this.value.toLowerCase();
+                const rows = document.getElementById('eventAttendanceTableBody').querySelectorAll('tr');
+                
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    if (text.includes(searchText)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+            
+            // เมื่อคลิกที่แท็บต่างๆ
+            document.querySelectorAll('#reportTab button').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabId = this.id;
+                    
+                    if (tabId === 'summary-tab') {
+                        loadSummaryData();
+                    } else if (tabId === 'events-tab') {
+                        loadEventsList();
+                    }
+                });
+            });
+            
+            // ออกจากระบบ
+            document.getElementById('logoutBtn').addEventListener('click', function(e) {
+                e.preventDefault();
+                logout();
+            });
+            
+            // โหลดข้อมูลสรุปเมื่อหน้าเว็บถูกโหลด
+            loadSummaryData();
+            
+            // ฟังก์ชันโหลดข้อมูลสรุป
+            function loadSummaryData() {
+                showLoading();
+                
+                const dateRange = document.getElementById('summaryDateRange').value;
+                const faculty = document.getElementById('summaryFaculty').value;
+                const department = document.getElementById('summaryDepartment').value;
+                
+                // แยกช่วงวันที่
+                let startDate = '';
+                let endDate = '';
+                
+                if (dateRange) {
+                    const dates = dateRange.split(' to ');
+                    startDate = dates[0];
+                    endDate = dates.length > 1 ? dates[1] : dates[0];
+                }
+                
+                // สร้าง URL สำหรับ API
+                let url = '/api/reports/attendance-summary';
+                const params = [];
+                
+                if (startDate) params.push(`startDate=${startDate}`);
+                if (endDate) params.push(`endDate=${endDate}`);
+                if (faculty) params.push(`faculty=${encodeURIComponent(faculty)}`);
+                if (department) params.push(`department=${encodeURIComponent(department)}`);
+                
+                if (params.length > 0) {
+                    url += '?' + params.join('&');
+                }
+                
+                fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    
+                    if (data.success) {
+                        summaryData = data.report;
+                        
+                        // อัปเดตสถิติ
+                        updateSummaryStats(summaryData);
+                        
+                        // สร้างกราฟ
+                        createCharts(summaryData);
+                        
+                        // แสดงตารางสรุป
+                        displaySummaryTable(summaryData);
+                    } else {
+                        showFeedback('ไม่สามารถโหลดข้อมูลสรุปได้', 'error');
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    console.error('Error loading summary data:', error);
+                    showFeedback('เกิดข้อผิดพลาดในการโหลดข้อมูลสรุป', 'error');
+                });
+            }
+            
+            // ฟังก์ชันอัปเดตสถิติสรุป
+            function updateSummaryStats(data) {
+                let presentCount = 0;
+                let lateCount = 0;
+                let absentCount = 0;
+                let totalCount = 0;
+                
+                data.forEach(event => {
+                    presentCount += event.present_count || 0;
+                    lateCount += event.late_count || 0;
+                    absentCount += (event.absent_count || 0) + (event.excused_count || 0);
+                    totalCount += event.total_attendees || 0;
+                });
+                
+                document.getElementById('presentCount').textContent = presentCount;
+                document.getElementById('lateCount').textContent = lateCount;
+                document.getElementById('absentCount').textContent = absentCount;
+                document.getElementById('totalAttendance').textContent = totalCount;
+            }
+            
+            // ฟังก์ชันสร้างกราฟ
+            function createCharts(data) {
+                // ลบกราฟเดิม (ถ้ามี)
+                if (charts.eventChart) {
+                    charts.eventChart.destroy();
+                }
+                
+                if (charts.statusChart) {
+                    charts.statusChart.destroy();
+                }
+                
+                // ถ้าไม่มีข้อมูล
+                if (data.length === 0) {
+                    return;
+                }
+                
+                // เตรียมข้อมูลสำหรับกราฟแท่ง (จำนวนการเข้าร่วมตามกิจกรรม)
+                const eventLabels = data.map(item => {
+                    const eventName = item.event_name;
+                    return eventName.length > 20 ? eventName.substring(0, 17) + '...' : eventName;
+                });
+                
+                const presentData = data.map(item => item.present_count || 0);
+                const lateData = data.map(item => item.late_count || 0);
+                const absentData = data.map(item => (item.absent_count || 0) + (item.excused_count || 0));
+                
+                const eventChartCtx = document.getElementById('eventChart').getContext('2d');
+                charts.eventChart = new Chart(eventChartCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: eventLabels,
+                        datasets: [
+                            {
+                                label: 'มาเรียน',
+                                data: presentData,
+                                backgroundColor: '#28a745',
+                                borderWidth: 0
+                            },
+                            {
+                                label: 'มาสาย',
+                                data: lateData,
+                                backgroundColor: '#ffc107',
+                                borderWidth: 0
+                            },
+                            {
+                                label: 'ขาด/ลา',
+                                data: absentData,
+                                backgroundColor: '#dc3545',
+                                borderWidth: 0
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                stacked: true
+                            },
+                            y: {
+                                stacked: true,
+                                beginAtZero: true,
+                                ticks: {
+                                    precision: 0
+                                }
+                            }
+                        }
+                    }
+                });
+                
+                // เตรียมข้อมูลสำหรับกราฟวงกลม (สัดส่วนการเข้าร่วมกิจกรรม)
+                let totalPresent = 0;
+                let totalLate = 0;
+                let totalAbsent = 0;
+                
+                data.forEach(item => {
+                    totalPresent += item.present_count || 0;
+                    totalLate += item.late_count || 0;
+                    totalAbsent += (item.absent_count || 0) + (item.excused_count || 0);
+                });
+                
+                const statusChartCtx = document.getElementById('statusChart').getContext('2d');
+                charts.statusChart = new Chart(statusChartCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['มาเรียน', 'มาสาย', 'ขาด/ลา'],
+                        datasets: [{
+                            data: [totalPresent, totalLate, totalAbsent],
+                            backgroundColor: ['#28a745', '#ffc107', '#dc3545'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // ฟังก์ชันแสดงตารางสรุป
+            function displaySummaryTable(data) {
+                const tableBody = document.getElementById('summaryTableBody');
+                tableBody.innerHTML = '';
+                
+                if (data.length === 0) {
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="7" class="text-center py-3">ไม่พบข้อมูล</td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                // เรียงลำดับตามวันที่ล่าสุดขึ้นก่อน
+                data.sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
+                
+                data.forEach(item => {
+                    const startDate = new Date(item.start_time);
+                    const formattedDate = startDate.toLocaleDateString('th-TH', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
+                    });
+                    
+                    // แปลงประเภทกิจกรรมเป็นภาษาไทย
+                    let eventType = 'อื่นๆ';
+                    if (item.event_type === 'class') {
+                        eventType = 'รายวิชา';
+                    } else if (item.event_type === 'activity') {
+                        eventType = 'กิจกรรม';
+                    } else if (item.event_type === 'seminar') {
+                        eventType = 'สัมมนา';
+                    } else if (item.event_type === 'exam') {
+                        eventType = 'สอบ';
+                    }
+                    
+                    const presentCount = item.present_count || 0;
+                    const lateCount = item.late_count || 0;
+                    const absentCount = (item.absent_count || 0) + (item.excused_count || 0);
+                    const totalCount = presentCount + lateCount + absentCount;
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${item.event_name}</td>
+                        <td>${eventType}</td>
+                        <td>${formattedDate}</td>
+                        <td>${presentCount}</td>
+                        <td>${lateCount}</td>
+                        <td>${absentCount}</td>
+                        <td>${totalCount}</td>
+                    `;
+                    
+                    tableBody.appendChild(row);
+                });
+            }
+            
+            // ฟังก์ชันโหลดรายการกิจกรรม
+            function loadEventsList() {
+                showLoading();
+                
+                fetch('/api/events')
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    
+                    if (data.success) {
+                        eventsList = data.events;
+                        
+                        // เรียงลำดับตามวันที่ล่าสุดขึ้นก่อน
+                        eventsList.sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
+                        
+                        // อัปเดต select options
+                        const eventSelect = document.getElementById('eventSelect');
+                        eventSelect.innerHTML = '<option value="">-- กรุณาเลือกกิจกรรม/รายวิชา --</option>';
+                        
+                        eventsList.forEach(event => {
+                            const startDate = new Date(event.start_time);
+                            const formattedDate = startDate.toLocaleDateString('th-TH', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric'
+                            });
+                            
+                            const option = document.createElement('option');
+                            option.value = event.id;
+                            option.textContent = `${event.event_name} (${formattedDate})`;
+                            eventSelect.appendChild(option);
+                        });
+                    } else {
+                        showFeedback('ไม่สามารถโหลดรายการกิจกรรมได้', 'error');
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    console.error('Error loading events list:', error);
+                    showFeedback('เกิดข้อผิดพลาดในการโหลดรายการกิจกรรม', 'error');
+                });
+            }
+            
+            // ฟังก์ชันโหลดข้อมูลกิจกรรม
+            function loadEventDetail(eventId) {
+                showLoading();
+                
+                fetch(`/api/events/${eventId}`)
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    
+                    if (data.success) {
+                        selectedEvent = data.event;
+                        const attendance = data.attendance;
+                        
+                        // แสดงรายละเอียดกิจกรรม
+                        document.getElementById('eventDetailName').textContent = selectedEvent.event_name;
+                        
+                        // แปลงประเภทกิจกรรมเป็นภาษาไทย
+                        let eventType = 'อื่นๆ';
+                        if (selectedEvent.event_type === 'class') {
+                            eventType = 'รายวิชา';
+                        } else if (selectedEvent.event_type === 'activity') {
+                            eventType = 'กิจกรรม';
+                        } else if (selectedEvent.event_type === 'seminar') {
+                            eventType = 'สัมมนา';
+                        } else if (selectedEvent.event_type === 'exam') {
+                            eventType = 'สอบ';
+                        }
+                        document.getElementById('eventDetailType').textContent = eventType;
+                        
+                        document.getElementById('eventDetailLocation').textContent = selectedEvent.location || '-';
+                        
+                        // จัดรูปแบบวันที่
+                        const startDate = new Date(selectedEvent.start_time);
+                        const formattedDate = startDate.toLocaleDateString('th-TH', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric'
+                        });
+                        document.getElementById('eventDetailDate').textContent = formattedDate;
+                        
+                        // จัดรูปแบบเวลา
+                        const startTime = startDate.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+                        const endTime = new Date(selectedEvent.end_time).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+                        document.getElementById('eventDetailTime').textContent = `${startTime} - ${endTime}`;
+                        
+                        // แปลงสถานะกิจกรรมเป็นภาษาไทย
+                        let statusText = '';
+                        if (selectedEvent.status === 'active') {
+                            statusText = '<span class="badge bg-success">กำลังดำเนินการ</span>';
+                        } else if (selectedEvent.status === 'completed') {
+                            statusText = '<span class="badge bg-secondary">เสร็จสิ้น</span>';
+                        } else if (selectedEvent.status === 'cancelled') {
+                            statusText = '<span class="badge bg-danger">ยกเลิก</span>';
+                        }
+                        document.getElementById('eventDetailStatus').innerHTML = statusText;
+                        
+                        // อัปเดตสถิติการเข้าร่วม
+                        const presentCount = data.summary.present_count || 0;
+                        const lateCount = data.summary.late_count || 0;
+                        const absentCount = (data.summary.absent_count || 0) + (data.summary.excused_count || 0);
+                        const totalCount = presentCount + lateCount + absentCount;
+                        
+                        document.getElementById('eventPresentCount').textContent = presentCount;
+                        document.getElementById('eventLateCount').textContent = lateCount;
+                        document.getElementById('eventAbsentCount').textContent = absentCount;
+                        document.getElementById('eventTotalCount').textContent = totalCount;
+                        
+                        // แสดงรายชื่อผู้เข้าร่วม
+                        const tableBody = document.getElementById('eventAttendanceTableBody');
+                        tableBody.innerHTML = '';
+                        
+                        if (attendance.length === 0) {
+                            tableBody.innerHTML = `
+                                <tr>
+                                    <td colspan="7" class="text-center py-3">ยังไม่มีผู้เข้าร่วมกิจกรรมนี้</td>
+                                </tr>
+                            `;
+                        } else {
+                            // เรียงลำดับตามเวลาล่าสุด
+                            attendance.sort((a, b) => new Date(b.check_in_time) - new Date(a.check_in_time));
+                            
+                            attendance.forEach(record => {
+                                // จัดรูปแบบเวลา
+                                const checkInTime = record.check_in_time ? new Date(record.check_in_time).toLocaleString('th-TH') : '-';
+                                const checkOutTime = record.check_out_time ? new Date(record.check_out_time).toLocaleString('th-TH') : '-';
+                                
+                                // แปลงสถานะเป็นภาษาไทย
+                                let statusBadge = '';
+                                if (record.status === 'present') {
+                                    statusBadge = '<span class="badge bg-success">มาเรียน</span>';
+                                } else if (record.status === 'late') {
+                                    statusBadge = '<span class="badge bg-warning text-dark">มาสาย</span>';
+                                } else if (record.status === 'absent') {
+                                    statusBadge = '<span class="badge bg-danger">ขาดเรียน</span>';
+                                } else if (record.status === 'excused') {
+                                    statusBadge = '<span class="badge bg-info">ลา</span>';
+                                }
+                                
+                                const row = document.createElement('tr');
+                                row.innerHTML = `
+                                    <td>${record.student_id}</td>
+                                    <td>${record.student_name || '-'}</td>
+                                    <td>${record.faculty || '-'}${record.department ? ' / ' + record.department : ''}</td>
+                                    <td>${checkInTime}</td>
+                                    <td>${checkOutTime}</td>
+                                    <td>${statusBadge}</td>
+                                    <td>${record.notes || '-'}</td>
+                                `;
+                                
+                                tableBody.appendChild(row);
+                            });
+                        }
+                        
+                        // แสดงส่วนต่างๆ
+                        document.getElementById('eventDetail').classList.remove('d-none');
+                        document.getElementById('eventStats').classList.remove('d-none');
+                        document.getElementById('eventAttendanceTable').classList.remove('d-none');
+                        document.getElementById('noEventSelected').classList.add('d-none');
+                    } else {
+                        showFeedback('ไม่สามารถโหลดข้อมูลกิจกรรมได้', 'error');
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    console.error('Error loading event details:', error);
+                    showFeedback('เกิดข้อผิดพลาดในการโหลดข้อมูลกิจกรรม', 'error');
+                });
+            }
+            
+            // ฟังก์ชันโหลดข้อมูลนักศึกษา
+            function loadStudentDetail(studentId) {
+                showLoading();
+                
+                const dateRange = document.getElementById('studentDateRange').value;
+                
+                // แยกช่วงวันที่
+                let startDate = '';
+                let endDate = '';
+                
+                if (dateRange) {
+                    const dates = dateRange.split(' to ');
+                    startDate = dates[0];
+                    endDate = dates.length > 1 ? dates[1] : dates[0];
+                }
+                
+                // สร้าง URL สำหรับ API
+                let url = `/api/reports/student-attendance?studentId=${studentId}`;
+                
+                if (startDate) url += `&startDate=${startDate}`;
+                if (endDate) url += `&endDate=${endDate}`;
+                
+                fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    
+                    if (data.success) {
+                        const student = data.student;
+                        studentAttendance = data.attendance;
+                        
+                        // แสดงข้อมูลนักศึกษา
+                        document.getElementById('studentName').textContent = student.first_name && student.last_name ? 
+                            `${student.first_name} ${student.last_name}` : student.student_id;
+                            
+                        document.getElementById('studentId').textContent = student.student_id;
+                        document.getElementById('studentFaculty').textContent = student.faculty || '-';
+                        document.getElementById('studentDepartment').textContent = student.department || '-';
+                        
+                        // คำนวณสถิติการเข้าร่วม
+                        let presentCount = 0;
+                        let lateCount = 0;
+                        let absentCount = 0;
+                        
+                        studentAttendance.forEach(record => {
+                            if (record.status === 'present') {
+                                presentCount++;
+                            } else if (record.status === 'late') {
+                                lateCount++;
+                            } else if (record.status === 'absent' || record.status === 'excused') {
+                                absentCount++;
+                            }
+                        });
+                        
+                        const totalCount = presentCount + lateCount + absentCount;
+                        
+                        // อัปเดตสถิติ
+                        document.getElementById('studentPresentCount').textContent = presentCount;
+                        document.getElementById('studentLateCount').textContent = lateCount;
+                        document.getElementById('studentAbsentCount').textContent = absentCount;
+                        document.getElementById('studentTotalCount').textContent = totalCount;
+                        
+                        // อัปเดต progress bar
+                        if (totalCount > 0) {
+                            const presentPercent = (presentCount / totalCount * 100).toFixed(2);
+                            const latePercent = (lateCount / totalCount * 100).toFixed(2);
+                            const absentPercent = (absentCount / totalCount * 100).toFixed(2);
+                            
+                            document.getElementById('studentPresentBar').style.width = `${presentPercent}%`;
+                            document.getElementById('studentPresentBar').setAttribute('aria-valuenow', presentPercent);
+                            
+                            document.getElementById('studentLateBar').style.width = `${latePercent}%`;
+                            document.getElementById('studentLateBar').setAttribute('aria-valuenow', latePercent);
+                            
+                            document.getElementById('studentAbsentBar').style.width = `${absentPercent}%`;
+                            document.getElementById('studentAbsentBar').setAttribute('aria-valuenow', absentPercent);
+                        } else {
+                            document.getElementById('studentPresentBar').style.width = '0%';
+                            document.getElementById('studentLateBar').style.width = '0%';
+                            document.getElementById('studentAbsentBar').style.width = '0%';
+                        }
+                        
+                        // แสดงประวัติการเข้าร่วม
+                        const tableBody = document.getElementById('studentAttendanceTableBody');
+                        tableBody.innerHTML = '';
+                        
+                        if (studentAttendance.length === 0) {
+                            tableBody.innerHTML = `
+                                <tr>
+                                    <td colspan="7" class="text-center py-3">ไม่พบประวัติการเข้าร่วมกิจกรรม</td>
+                                </tr>
+                            `;
+                        } else {
+                            // เรียงลำดับตามวันที่ล่าสุด
+                            studentAttendance.sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
+                            
+                            studentAttendance.forEach(record => {
+                                // จัดรูปแบบวันที่
+                                const eventDate = new Date(record.start_time);
+                                const formattedDate = eventDate.toLocaleDateString('th-TH', {
+                                    day: 'numeric',
+                                    month: 'short',
+                                    year: 'numeric'
+                                });
+                                
+                                // แปลงประเภทกิจกรรมเป็นภาษาไทย
+                                let eventType = 'อื่นๆ';
+                                if (record.event_type === 'class') {
+                                    eventType = 'รายวิชา';
+                                } else if (record.event_type === 'activity') {
+                                    eventType = 'กิจกรรม';
+                                } else if (record.event_type === 'seminar') {
+                                    eventType = 'สัมมนา';
+                                } else if (record.event_type === 'exam') {
+                                    eventType = 'สอบ';
+                                }
+                                
+                                // จัดรูปแบบเวลา
+                                const checkInTime = record.check_in_time ? new Date(record.check_in_time).toLocaleString('th-TH') : '-';
+                                const checkOutTime = record.check_out_time ? new Date(record.check_out_time).toLocaleString('th-TH') : '-';
+                                
+                                // แปลงสถานะเป็นภาษาไทย
+                                let statusBadge = '';
+                                if (record.status === 'present') {
+                                    statusBadge = '<span class="badge bg-success">มาเรียน</span>';
+                                } else if (record.status === 'late') {
+                                    statusBadge = '<span class="badge bg-warning text-dark">มาสาย</span>';
+                                } else if (record.status === 'absent') {
+                                    statusBadge = '<span class="badge bg-danger">ขาดเรียน</span>';
+                                } else if (record.status === 'excused') {
+                                    statusBadge = '<span class="badge bg-info">ลา</span>';
+                                }
+                                
+                                const row = document.createElement('tr');
+                                row.innerHTML = `
+                                    <td>${formattedDate}</td>
+                                    <td>${record.event_name}</td>
+                                    <td>${eventType}</td>
+                                    <td>${checkInTime}</td>
+                                    <td>${checkOutTime}</td>
+                                    <td>${statusBadge}</td>
+                                    <td>${record.notes || '-'}</td>
+                                `;
+                                
+                                tableBody.appendChild(row);
+                            });
+                        }
+                        
+                        // แสดงส่วนต่างๆ
+                        document.getElementById('studentDetail').classList.remove('d-none');
+                        document.getElementById('studentAttendanceTable').classList.remove('d-none');
+                        document.getElementById('noStudentSearched').classList.add('d-none');
+                    } else {
+                        showFeedback('ไม่พบข้อมูลนักศึกษา', 'warning');
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    console.error('Error loading student details:', error);
+                    showFeedback('เกิดข้อผิดพลาดในการโหลดข้อมูลนักศึกษา', 'error');
+                });
+            }
+            
+            // ฟังก์ชันส่งออกข้อมูลรายกิจกรรม
+            function exportEventReport(eventId) {
+                showLoading();
+                
+                fetch(`/api/events/${eventId}`)
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    
+                    if (data.success) {
+                        const event = data.event;
+                        const attendance = data.attendance;
+                        
+                        if (attendance.length === 0) {
+                            showFeedback('ไม่มีรายชื่อผู้เข้าร่วมในกิจกรรมนี้', 'warning');
+                            return;
+                        }
+                        
+                        // สร้างข้อมูล CSV
+                        let csvContent = 'รหัสนักศึกษา,ชื่อ-นามสกุล,คณะ,สาขา,เวลาเข้า,เวลาออก,สถานะ,บันทึกเพิ่มเติม\n';
+                        
+                        attendance.forEach(record => {
+                            // แปลงสถานะเป็นภาษาไทย
+                            let statusText = '';
+                            if (record.status === 'present') {
+                                statusText = 'มาเรียน';
+                            } else if (record.status === 'late') {
+                                statusText = 'มาสาย';
+                            } else if (record.status === 'absent') {
+                                statusText = 'ขาดเรียน';
+                            } else if (record.status === 'excused') {
+                                statusText = 'ลาป่วย/ลากิจ';
+                            }
+                            
+                            // แปลงวันที่
+                            const checkInTime = record.check_in_time ? new Date(record.check_in_time).toLocaleString('th-TH') : '';
+                            const checkOutTime = record.check_out_time ? new Date(record.check_out_time).toLocaleString('th-TH') : '';
+                            
+                            // จัดการตัวอักษรพิเศษที่อาจทำให้เกิดปัญหากับไฟล์ CSV
+                            const studentName = record.student_name ? `"${record.student_name.replace(/"/g, '""')}"` : '-';
+                            const faculty = record.faculty ? `"${record.faculty.replace(/"/g, '""')}"` : '-';
+                            const department = record.department ? `"${record.department.replace(/"/g, '""')}"` : '-';
+                            const notes = record.notes ? `"${record.notes.replace(/"/g, '""')}"` : '';
+                            
+                            csvContent += `${record.student_id},${studentName},${faculty},${department},${checkInTime},${checkOutTime},${statusText},${notes}\n`;
+                        });
+                        
+                        // สร้าง Blob และลิงก์สำหรับดาวน์โหลด
+                        const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = `attendance_${event.event_name}_${new Date().toISOString().slice(0, 10)}.csv`;
+                        link.style.display = 'none';
+                        document.body.appendChild(link);
+                        
+                        link.click();
+                        
+                        // ทำความสะอาด
+                        URL.revokeObjectURL(url);
+                        document.body.removeChild(link);
+                        
+                        showFeedback('ส่งออกข้อมูลสำเร็จ', 'success');
+                    } else {
+                        showFeedback('ไม่สามารถโหลดข้อมูลกิจกรรมได้', 'error');
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    console.error('Error loading event details:', error);
+                    showFeedback('เกิดข้อผิดพลาดในการโหลดข้อมูลกิจกรรม', 'error');
+                });
+            }
+            
+            // ฟังก์ชันส่งออกข้อมูลรายบุคคล
+            function exportStudentReport(studentId) {
+                showLoading();
+                
+                const dateRange = document.getElementById('studentDateRange').value;
+                
+                // แยกช่วงวันที่
+                let startDate = '';
+                let endDate = '';
+                
+                if (dateRange) {
+                    const dates = dateRange.split(' to ');
+                    startDate = dates[0];
+                    endDate = dates.length > 1 ? dates[1] : dates[0];
+                }
+                
+                // สร้าง URL สำหรับ API
+                let url = `/api/reports/student-attendance?studentId=${studentId}`;
+                
+                if (startDate) url += `&startDate=${startDate}`;
+                if (endDate) url += `&endDate=${endDate}`;
+                
+                fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    
+                    if (data.success) {
+                        const student = data.student;
+                        const attendance = data.attendance;
+                        
+                        if (attendance.length === 0) {
+                            showFeedback('ไม่พบประวัติการเข้าร่วมกิจกรรม', 'warning');
+                            return;
+                        }
+                        
+                        // สร้างข้อมูล CSV
+                        let csvContent = 'วันที่,กิจกรรม/รายวิชา,ประเภท,เวลาเข้า,เวลาออก,สถานะ,หมายเหตุ\n';
+                        
+                        attendance.forEach(record => {
+                            // จัดรูปแบบวันที่
+                            const eventDate = new Date(record.start_time);
+                            const formattedDate = eventDate.toLocaleDateString('th-TH', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric'
+                            });
+                            
+                            // แปลงประเภทกิจกรรมเป็นภาษาไทย
+                            let eventType = 'อื่นๆ';
+                            if (record.event_type === 'class') {
+                                eventType = 'รายวิชา';
+                            } else if (record.event_type === 'activity') {
+                                eventType = 'กิจกรรม';
+                            } else if (record.event_type === 'seminar') {
+                                eventType = 'สัมมนา';
+                            } else if (record.event_type === 'exam') {
+                                eventType = 'สอบ';
+                            }
+                            
+                            // แปลงวันเวลา
+                            const checkInTime = record.check_in_time ? new Date(record.check_in_time).toLocaleString('th-TH') : '';
+                            const checkOutTime = record.check_out_time ? new Date(record.check_out_time).toLocaleString('th-TH') : '';
+                            
+                            // แปลงสถานะเป็นภาษาไทย
+                            let statusText = '';
+                            if (record.status === 'present') {
+                                statusText = 'มาเรียน';
+                            } else if (record.status === 'late') {
+                                statusText = 'มาสาย';
+                            } else if (record.status === 'absent') {
+                                statusText = 'ขาดเรียน';
+                            } else if (record.status === 'excused') {
+                                statusText = 'ลาป่วย/ลากิจ';
+                            }
+                            
+                            // จัดการตัวอักษรพิเศษที่อาจทำให้เกิดปัญหากับไฟล์ CSV
+                            const eventName = `"${record.event_name.replace(/"/g, '""')}"`;
+                            const notes = record.notes ? `"${record.notes.replace(/"/g, '""')}"` : '';
+                            
+                            csvContent += `${formattedDate},${eventName},${eventType},${checkInTime},${checkOutTime},${statusText},${notes}\n`;
+                        });
+                        
+                        // สร้าง Blob และลิงก์สำหรับดาวน์โหลด
+                        const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = `student_attendance_${studentId}_${new Date().toISOString().slice(0, 10)}.csv`;
+                        link.style.display = 'none';
+                        document.body.appendChild(link);
+                        
+                        link.click();
+                        
+                        // ทำความสะอาด
+                        URL.revokeObjectURL(url);
+                        document.body.removeChild(link);
+                        
+                        showFeedback('ส่งออกข้อมูลสำเร็จ', 'success');
+                    } else {
+                        showFeedback('ไม่สามารถโหลดข้อมูลนักศึกษาได้', 'error');
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    console.error('Error exporting student report:', error);
+                    showFeedback('เกิดข้อผิดพลาดในการส่งออกข้อมูล', 'error');
+                });
+            }
+            
+            // ฟังก์ชันสำหรับแสดงข้อความแจ้งเตือน
+            function showFeedback(message, type) {
+                const container = document.querySelector('.feedback-container');
+                const toast = document.createElement('div');
+                toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'danger'} border-0`;
+                toast.setAttribute('role', 'alert');
+                toast.setAttribute('aria-live', 'assertive');
+                toast.setAttribute('aria-atomic', 'true');
+                
+                if (type === 'warning') {
+                    toast.classList.remove('text-white');
+                    toast.classList.add('text-dark');
+                }
+                
+                toast.innerHTML = `
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                `;
+                
+                container.appendChild(toast);
+                
+                const bsToast = new bootstrap.Toast(toast, {
+                    autohide: true,
+                    delay: 3000
+                });
+                
+                bsToast.show();
+                
+                // เมื่อ toast ถูกซ่อน ให้ลบออกจาก DOM
+                toast.addEventListener('hidden.bs.toast', function() {
+                    toast.remove();
+                });
+            }
+            
+            // ฟังก์ชันสำหรับแสดง loading
+            function showLoading() {
+                document.getElementById('loadingOverlay').style.display = 'flex';
+            }
+            
+            // ฟังก์ชันสำหรับซ่อน loading
+            function hideLoading() {
+                document.getElementById('loadingOverlay').style.display = 'none';
+            }
+            
+            // ฟังก์ชันตรวจสอบสถานะการล็อกอิน
+            function checkAuthentication() {
+                showLoading();
+                
+                fetch('/api/login', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    hideLoading();
+                    
+                    if (response.status === 401) {
+                        // ไม่ได้ล็อกอิน ให้ redirect ไปหน้าล็อกอิน
+                        window.location.href = '/login';
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    console.error('Error checking authentication:', error);
+                    showFeedback('เกิดข้อผิดพลาดในการตรวจสอบสถานะการล็อกอิน', 'error');
+                });
+            }
+            
+            // ฟังก์ชันออกจากระบบ
+            function logout() {
+                showLoading();
+                
+                fetch('/api/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    
+                    if (data.success) {
+                        // ออกจากระบบสำเร็จ ให้ redirect ไปหน้าล็อกอิน
+                        window.location.href = '/login';
+                    } else {
+                        showFeedback(data.message || 'เกิดข้อผิดพลาดในการออกจากระบบ', 'error');
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    console.error('Error logging out:', error);
+                    showFeedback('เกิดข้อผิดพลาดในการออกจากระบบ', 'error');
+                });
+            }
+        });
+    </script>
+</body>
+</html>
