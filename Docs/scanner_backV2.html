@@ -674,36 +674,10 @@
                                     showFeedback('เริ่มการสแกนสำเร็จ', 'success');
                                 })
                                 .catch(err => {
-                                    console.error('Error starting scanner:', err);
-                                    let errorMessage = 'ไม่สามารถเริ่มกล้องได้';
 
-                                    // ตรวจสอบข้อผิดพลาดที่เฉพาะเจาะจงและแสดงข้อความที่ชัดเจนยิ่งขึ้น
-                                    if (err.name === 'NotAllowedError') {
-                                        errorMessage = 'การเข้าถึงกล้องถูกปฏิเสธ โปรดอนุญาตการใช้กล้องในการตั้งค่าเบราว์เซอร์';
-                                        // แสดงปุ่มขออนุญาตใหม่ (คำแนะนำที่ 4)
-                                        document.getElementById('requestCameraPermission').classList.remove('d-none');
-                                    } else if (err.name === 'NotFoundError') {
-                                        errorMessage = 'ไม่พบกล้องบนอุปกรณ์นี้';
-                                    } else if (err.name === 'NotReadableError') {
-                                        errorMessage = 'ไม่สามารถเข้าถึงกล้องได้ กล้องอาจกำลังถูกใช้งานโดยแอปพลิเคชันอื่น';
-                                    } else if (err.name === 'OverconstrainedError') {
-                                        errorMessage = 'ไม่พบกล้องที่ตรงตามเงื่อนไขที่กำหนด';
-                                    } else if (err.name === 'SecurityError') {
-                                        errorMessage = 'การใช้งานกล้องไม่ได้รับอนุญาตเนื่องจากข้อจำกัดด้านความปลอดภัย';
-                                    } else if (err.name === 'AbortError') {
-                                        errorMessage = 'การเข้าถึงกล้องถูกยกเลิก';
-                                    }
+                                    const manualFormCard = document.querySelector('.card-header:contains("บันทึกด้วยตนเอง")').closest('.card');
 
-                                    showFeedback(errorMessage, 'error');
-                                    document.getElementById('stopScanBtn').classList.add('d-none');
-                                    document.getElementById('startScanBtn').classList.remove('d-none');
-
-                                    // เน้นส่วนการบันทึกด้วยตนเอง (คำแนะนำที่ 3)
-                                    // หาอ้างอิงถึงส่วนของฟอร์มบันทึกด้วยตนเอง
-                                    const manualFormHeader = findElementContainingText('.card-header', 'บันทึกด้วยตนเอง');
-                                    if (manualFormHeader) {
-                                        const manualFormCard = manualFormHeader.closest('.card');
-
+                                    if (manualFormCard) {
                                         // เพิ่มเอฟเฟกต์เน้นที่ฟอร์ม
                                         manualFormCard.classList.add('border-primary');
                                         manualFormCard.classList.add('shadow');
@@ -723,18 +697,45 @@
                                         manualFormCard.querySelector('.card-body').prepend(alertElement);
                                     }
 
+
+                                    console.error('Error starting scanner:', err);
+                                    let errorMessage = 'ไม่สามารถเริ่มกล้องได้';
+
+                                    // ตรวจสอบข้อผิดพลาดที่เฉพาะเจาะจงและแสดงข้อความที่ชัดเจนยิ่งขึ้น
+                                    if (err.name === 'NotAllowedError') {
+                                        errorMessage = 'การเข้าถึงกล้องถูกปฏิเสธ โปรดอนุญาตการใช้กล้องในการตั้งค่าเบราว์เซอร์';
+                                    } else if (err.name === 'NotFoundError') {
+                                        errorMessage = 'ไม่พบกล้องบนอุปกรณ์นี้';
+                                    } else if (err.name === 'NotReadableError') {
+                                        errorMessage = 'ไม่สามารถเข้าถึงกล้องได้ กล้องอาจกำลังถูกใช้งานโดยแอปพลิเคชันอื่น';
+                                    } else if (err.name === 'OverconstrainedError') {
+                                        errorMessage = 'ไม่พบกล้องที่ตรงตามเงื่อนไขที่กำหนด';
+                                    } else if (err.name === 'SecurityError') {
+                                        errorMessage = 'การใช้งานกล้องไม่ได้รับอนุญาตเนื่องจากข้อจำกัดด้านความปลอดภัย';
+                                    } else if (err.name === 'AbortError') {
+                                        errorMessage = 'การเข้าถึงกล้องถูกยกเลิก';
+                                    }
+
+                                    showFeedback(errorMessage, 'error');
+                                    document.getElementById('stopScanBtn').classList.add('d-none');
+                                    document.getElementById('startScanBtn').classList.remove('d-none');
+
+                                    if (err.name === 'NotAllowedError') {
+                                        document.getElementById('requestCameraPermission').classList.remove('d-none');
+                                    }
+
                                     // แสดงคำแนะนำเพิ่มเติมในกรณีที่พบปัญหา
                                     const infoElement = document.createElement('div');
                                     infoElement.className = 'alert alert-info mt-3';
                                     infoElement.innerHTML = `
-        <h5>คำแนะนำเพิ่มเติม</h5>
-        <ul>
-            <li>ตรวจสอบว่าอุปกรณ์ของคุณมีกล้อง</li>
-            <li>ตรวจสอบว่าไม่มีแอปพลิเคชันอื่นกำลังใช้งานกล้องอยู่</li>
-            <li>ตรวจสอบการตั้งค่าสิทธิ์ในการเข้าถึงกล้องของเบราว์เซอร์</li>
-            <li>ลองรีเฟรชหน้าเว็บและลองอีกครั้ง</li>
-        </ul>
-    `;
+                    <h5>คำแนะนำเพิ่มเติม</h5>
+                    <ul>
+                        <li>ตรวจสอบว่าอุปกรณ์ของคุณมีกล้อง</li>
+                        <li>ตรวจสอบว่าไม่มีแอปพลิเคชันอื่นกำลังใช้งานกล้องอยู่</li>
+                        <li>ตรวจสอบการตั้งค่าสิทธิ์ในการเข้าถึงกล้องของเบราว์เซอร์</li>
+                        <li>ลองรีเฟรชหน้าเว็บและลองอีกครั้ง</li>
+                    </ul>
+                `;
 
                                     // ลบคำแนะนำเก่าออกก่อน (ถ้ามี)
                                     const oldInfo = document.querySelector('.alert.alert-info');
@@ -744,8 +745,6 @@
                                     const cardBody = document.querySelector('.scanner-container').parentNode;
                                     cardBody.appendChild(infoElement);
                                 });
-
-
                         } else {
                             showFeedback('ไม่พบกล้องในอุปกรณ์นี้', 'error');
 
