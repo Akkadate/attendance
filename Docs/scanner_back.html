@@ -281,10 +281,6 @@
                                 <button id="stopScanBtn" class="btn btn-secondary d-none">
                                     <i class="fas fa-stop me-1"></i>หยุดสแกน
                                 </button>
-                                <!-- เพิ่มปุ่มนี้ -->
-                                <button id="requestCameraPermission" class="btn btn-outline-primary mt-2 d-none">
-                                    <i class="fas fa-camera me-1"></i>ขออนุญาตเข้าถึงกล้องใหม่
-                                </button>
                             </div>
                         </div>
                     </div>
@@ -420,43 +416,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 
     <script>
-
-        // ฟังก์ชัน utility สำหรับค้นหาองค์ประกอบตามข้อความ
-        function findElementContainingText(selector, text) {
-            const elements = document.querySelectorAll(selector);
-            for (let i = 0; i < elements.length; i++) {
-                if (elements[i].textContent.includes(text)) {
-                    return elements[i];
-                }
-            }
-            return null;
-        }
-
         // ตรวจสอบสถานะการล็อกอิน
         document.addEventListener('DOMContentLoaded', function () {
-            // ปุ่มขออนุญาตเข้าถึงกล้องใหม่
-            document.getElementById('requestCameraPermission').addEventListener('click', function () {
-                // แสดง loading
-                showLoading();
-
-                navigator.mediaDevices.getUserMedia({ video: true })
-                    .then(function (stream) {
-                        // อนุญาตเข้าถึงกล้องสำเร็จ
-                        stream.getTracks().forEach(track => track.stop()); // หยุด stream ทันที
-                        hideLoading();
-                        showFeedback('ได้รับอนุญาตให้เข้าถึงกล้องแล้ว', 'success');
-
-                        // ซ่อนปุ่มขออนุญาต
-                        document.getElementById('requestCameraPermission').classList.add('d-none');
-
-                        // เริ่มการสแกนใหม่
-                        startScanner();
-                    })
-                    .catch(function (error) {
-                        hideLoading();
-                        showFeedback('ไม่สามารถเข้าถึงกล้องได้: ' + error.message, 'error');
-                    });
-            });
             // ตรวจสอบว่ามีการล็อกอินหรือไม่
             checkAuthentication();
 
@@ -616,20 +577,6 @@
             // ฟังก์ชันเริ่ม scanner
             // ฟังก์ชันเริ่ม scanner
             function startScanner() {
-                // เพิ่มตรงนี้: ตรวจสอบ HTTPS
-                if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
-                    showFeedback('การเข้าถึงกล้องต้องใช้งานผ่าน HTTPS เท่านั้น', 'warning');
-                    return;
-                }
-
-                // เพิ่มตรงนี้: ตรวจสอบความเข้ากันได้ของเบราว์เซอร์
-                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                    showFeedback('เบราว์เซอร์ของคุณไม่รองรับการเข้าถึงกล้อง', 'error');
-                    return;
-                }
-
-
-
                 // ตรวจสอบว่ามี scanner อยู่แล้วหรือไม่
                 if (html5QrCodeScanner) {
                     html5QrCodeScanner.clear();
@@ -674,30 +621,6 @@
                                     showFeedback('เริ่มการสแกนสำเร็จ', 'success');
                                 })
                                 .catch(err => {
-
-                                    const manualFormCard = document.querySelector('.card-header:contains("บันทึกด้วยตนเอง")').closest('.card');
-
-                                    if (manualFormCard) {
-                                        // เพิ่มเอฟเฟกต์เน้นที่ฟอร์ม
-                                        manualFormCard.classList.add('border-primary');
-                                        manualFormCard.classList.add('shadow');
-
-                                        // เลื่อนหน้าจอไปที่ฟอร์ม
-                                        manualFormCard.scrollIntoView({ behavior: 'smooth' });
-
-                                        // เพิ่มข้อความแนะนำ
-                                        const alertElement = document.createElement('div');
-                                        alertElement.className = 'alert alert-primary mt-3 mb-3';
-                                        alertElement.innerHTML = `
-            <i class="fas fa-info-circle me-2"></i>
-            <strong>คำแนะนำ:</strong> คุณสามารถใช้การบันทึกด้วยตนเองได้หากการเข้าถึงกล้องมีปัญหา
-        `;
-
-                                        // แทรกข้อความแนะนำเหนือฟอร์ม
-                                        manualFormCard.querySelector('.card-body').prepend(alertElement);
-                                    }
-
-
                                     console.error('Error starting scanner:', err);
                                     let errorMessage = 'ไม่สามารถเริ่มกล้องได้';
 
@@ -719,10 +642,6 @@
                                     showFeedback(errorMessage, 'error');
                                     document.getElementById('stopScanBtn').classList.add('d-none');
                                     document.getElementById('startScanBtn').classList.remove('d-none');
-
-                                    if (err.name === 'NotAllowedError') {
-                                        document.getElementById('requestCameraPermission').classList.remove('d-none');
-                                    }
 
                                     // แสดงคำแนะนำเพิ่มเติมในกรณีที่พบปัญหา
                                     const infoElement = document.createElement('div');
@@ -1025,8 +944,8 @@
                 const container = document.querySelector('.feedback-container');
                 const toast = document.createElement('div');
                 toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' :
-                    type === 'warning' ? 'warning' :
-                        type === 'info' ? 'info' : 'danger'
+                        type === 'warning' ? 'warning' :
+                            type === 'info' ? 'info' : 'danger'
                     } border-0`;
                 toast.setAttribute('role', 'alert');
                 toast.setAttribute('aria-live', 'assertive');
