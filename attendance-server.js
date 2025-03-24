@@ -42,6 +42,7 @@ app.use(
     cookie: {
       secure: process.env.NODE_ENV === "production",
       maxAge: 3600000, // 1 ชั่วโมง
+      domain: ".devapp.cc", // เพิ่มบรรทัดนี้
     },
   })
 );
@@ -49,9 +50,10 @@ app.use(
 // ตั้งค่า middleware
 app.use(
   cors({
-    origin: "*",
+    origin: ["https://attendance.devapp.cc"], // ระบุ domain ที่อนุญาต
     methods: ["GET", "POST", "OPTIONS", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+    credentials: true, // เพิ่มบรรทัดนี้เพื่อส่ง cookie ผ่าน CORS
   })
 );
 app.use(bodyParser.json());
