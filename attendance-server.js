@@ -239,6 +239,22 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
+// API ตรวจสอบสถานะการล็อกอิน
+app.get("/api/login", (req, res) => {
+  if (req.session.user) {
+    return res.json({
+      success: true,
+      message: "มีการล็อกอินอยู่แล้ว",
+      user: req.session.user,
+    });
+  } else {
+    return res.status(401).json({
+      success: false,
+      message: "กรุณาล็อกอินเพื่อเข้าใช้งานระบบ",
+    });
+  }
+});
+
 // API ออกจากระบบ
 app.post("/api/logout", (req, res) => {
   if (req.session.user) {
