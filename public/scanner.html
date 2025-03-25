@@ -421,6 +421,34 @@
 
     <script>
 
+        // เพิ่มฟังก์ชันนี้ใน scanner.html
+        function decryptQRData(encryptedString, secretKey) {
+            try {
+                const data = JSON.parse(encryptedString);
+
+                // ตรวจสอบ HMAC signature
+                const computedHmac = CryptoJS.HmacSHA256(data.e + data.iv, secretKey).toString();
+                if (computedHmac !== data.s) {
+                    throw new Error('Invalid signature - data may be tampered');
+                }
+
+                // ถอดรหัสข้อมูล
+                const decrypted = CryptoJS.AES.decrypt(
+                    data.e,
+                    secretKey,
+                    {
+                        iv: CryptoJS.enc.Utf8.parse(data.iv)
+                    }
+                );
+
+                // แปลงเป็นข้อความและแปลงเป็น JSON
+                return JSON.parse(decrypted.toString(CryptoJS.enc.Utf8));
+            } catch (error) {
+                console.error(`Error during decryption: ${error.message}`);
+                return null;
+            }
+        }
+
         // ฟังก์ชัน utility สำหรับค้นหาองค์ประกอบตามข้อความ
         function findElementContainingText(selector, text) {
             const elements = document.querySelectorAll(selector);
@@ -808,15 +836,62 @@
             }
 
             // ฟังก์ชันสำหรับประมวลผล QR Code
+            // ฟังก์ชันสำหรับประมวลผล QR Code
             function processQRCode(qrData) {
+                // ถอดรหัสข้อมูล QR
+                let studentInfo;
+                const secretKey = "uN1v3Rs1tY_s3cUr1tY_k3Y"; // ต้องตรงกับใน student-card.html
+
+                try {
+                    // พยายามถอดรหัสแบบใหม่ (เวอร์ชัน 2.0)
+                    const decryptedData = decryptQRData(qrData, secretKey);
+
+                    if (decryptedData) {
+                        // ตรวจสอบเวลาหมดอายุ
+                        const now = new Date().getTime();
+                        if (decryptedData.exp < now) {
+                            showFeedback("QR Code หมดอายุแล้ว กรุณาสร้าง QR Code ใหม่", "warning");
+                            return;
+                        }
+
+                        // สร้างข้อมูลนักศึกษาจากข้อมูลที่ถอดรหัสได้
+                        studentInfo = {
+                            studentId: decryptedData.sid,
+                            name: decryptedData.name,
+                            faculty: decryptedData.fac,
+                            department: decryptedData.dep
+                        };
+                    } else {
+                        // ถ้าถอดรหัสไม่ได้ ให้ตรวจสอบว่าเป็นรูปแบบเก่าหรือไม่
+                        if (qrData.startsWith('STUDENT:')) {
+                            // รูปแบบเก่า: "STUDENT:123456,TIME:1234567890,EXP:1234567899"
+                            const parts = qrData.split(',');
+                            const studentId = parts[0].split(':')[1];
+
+                            studentInfo = {
+                                studentId: studentId
+                            };
+                        } else {
+                            showFeedback("รูปแบบ QR Code ไม่ถูกต้อง", "error");
+                            return;
+                        }
+                    }
+                } catch (error) {
+                    console.error("Error decrypting QR code:", error);
+                    showFeedback("ไม่สามารถถอดรหัส QR Code ได้", "error");
+                    return;
+                }
+
+                // ส่งข้อมูลไปยัง API
                 fetch('/api/process-qrcode', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        qrData: qrData,
-                        eventId: selectedEventId
+                        qrData: studentInfo.studentId, // ส่งเฉพาะรหัสนักศึกษาไปยัง API
+                        eventId: selectedEventId,
+                        studentInfo: studentInfo // ส่งข้อมูลทั้งหมดที่ถอดรหัสได้
                     })
                 })
                     .then(response => response.json())
@@ -826,7 +901,7 @@
 
                         if (data.success) {
                             // แสดงข้อมูลนักศึกษา
-                            displayStudentInfo(data.studentInfo, data.isCheckOut);
+                            displayStudentInfo(data.studentInfo || studentInfo, data.isCheckOut);
 
                             // แสดงข้อความแจ้งเตือน
                             showFeedback(data.message, 'success');
@@ -849,6 +924,7 @@
                         showFeedback('เกิดข้อผิดพลาดในการประมวลผล QR Code', 'error');
                     });
             }
+
 
             // ฟังก์ชันสำหรับแสดงข้อมูลนักศึกษา
             function displayStudentInfo(studentInfo, isCheckOut) {
@@ -1020,7 +1096,6 @@
                 document.getElementById('totalCount').textContent = total;
             }
 
-            // ฟังก์ชันสำหรับแสดงข้อความแจ้งเตือน
             // ฟังก์ชันสำหรับแสดงข้อความแจ้งเตือน
             function showFeedback(message, type) {
                 const container = document.querySelector('.feedback-container');
