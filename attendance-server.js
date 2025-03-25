@@ -239,6 +239,14 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
+app.get('/api/scanner-config', (req, res) => {
+  // ส่งเฉพาะค่าที่จำเป็น ไม่ควรส่งค่าที่เป็นความลับทั้งหมด
+  res.json({
+    ENCRYPTION_SECRET: process.env.ENCRYPTION_SECRET,
+    // ตัวแปรอื่นๆ ที่จำเป็น
+  });
+});
+
 // API ตรวจสอบสถานะการล็อกอิน
 app.get("/api/login", (req, res) => {
   if (req.session.user) {

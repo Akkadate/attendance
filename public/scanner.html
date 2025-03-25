@@ -421,6 +421,29 @@
 
     <script>
 
+        let CONFIG = {
+            ENCRYPTION_SECRET: "",
+            // ค่า config อื่นๆ
+        };
+
+        // โหลด config จาก server
+        async function loadConfig() {
+            try {
+                const response = await fetch('/api/scanner-config');
+                if (response.ok) {
+                    const config = await response.json();
+                    // อัปเดตค่า config
+                    Object.assign(CONFIG, config);
+                    console.log("Config loaded successfully");
+                } else {
+                    console.error("Failed to load config");
+                }
+            } catch (error) {
+                console.error("Error loading config:", error);
+            }
+        }
+
+
         // เพิ่มฟังก์ชันนี้ใน scanner.html
         function decryptQRData(encryptedString, secretKey) {
             try {
@@ -461,7 +484,8 @@
         }
 
         // ตรวจสอบสถานะการล็อกอิน
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', async function () {
+            await loadConfig();
             // ปุ่มขออนุญาตเข้าถึงกล้องใหม่
             document.getElementById('requestCameraPermission').addEventListener('click', function () {
                 // แสดง loading
@@ -840,7 +864,7 @@
             function processQRCode(qrData) {
                 // ถอดรหัสข้อมูล QR
                 let studentInfo;
-                const secretKey = "uN1v3Rs1tY_s3cUr1tY_k3Y"; // ต้องตรงกับใน student-card.html
+                const secretKey = CONFIG.ENCRYPTION_SECRET; // ต้องตรงกับใน student-card.html
 
                 try {
                     // พยายามถอดรหัสแบบใหม่ (เวอร์ชัน 2.0)
