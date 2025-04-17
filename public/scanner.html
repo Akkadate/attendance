@@ -909,6 +909,8 @@ function unscrambleString(str) {
                 // ถอดรหัสข้อมูล QR
                 let studentInfo;
                 const secretKey = CONFIG.ENCRYPTION_SECRET; // ต้องตรงกับใน student-card.html
+                console.log("ใช้ Secret Key (3 ตัวแรก):", process.env.ENCRYPTION_SECRET.substring(0, 3));
+                console.log("สถานะการโหลด .env:", process.env.ENCRYPTION_SECRET ? "โหลดสำเร็จ" : "ไม่พบค่า");
 
                 try {
                     // พยายามถอดรหัสแบบใหม่ (เวอร์ชัน 2.0)
