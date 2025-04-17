@@ -445,16 +445,39 @@
 
 
         // เพิ่มฟังก์ชันนี้ใน scanner.html
-        function decryptQRData(encryptedString, secretKey) {
+        // แก้ไขฟังก์ชัน decryptQRData ในไฟล์ scanner.html
+function decryptQRData(encryptedString, secretKey) {
+    try {
+        // ถอดรหัส Base64 ก่อน
+        const base64Decoded = atob(encryptedString);
+        
+        // ทดลองถอดรหัสแบบใหม่ (XOR + scramble)
+        try {
+            // ถอดการสลับตำแหน่งตัวอักษร (unscramble)
+            const unscrambled = unscrambleString(base64Decoded);
+            
+            // ถอดรหัส XOR
+            let result = '';
+            for (let i = 0; i < unscrambled.length; i++) {
+                const charCode = unscrambled.charCodeAt(i) ^ secretKey.charCodeAt(i % secretKey.length);
+                result += String.fromCharCode(charCode);
+            }
+            
+            // แปลงเป็น JavaScript object
+            return JSON.parse(result);
+        } catch (xorError) {
+            console.error('ถอดรหัสแบบ XOR ไม่สำเร็จ:', xorError);
+            
+            // ทดลองถอดรหัสแบบเดิม (AES)
             try {
                 const data = JSON.parse(encryptedString);
-
+                
                 // ตรวจสอบ HMAC signature
                 const computedHmac = CryptoJS.HmacSHA256(data.e + data.iv, secretKey).toString();
                 if (computedHmac !== data.s) {
                     throw new Error('Invalid signature - data may be tampered');
                 }
-
+                
                 // ถอดรหัสข้อมูล
                 const decrypted = CryptoJS.AES.decrypt(
                     data.e,
@@ -463,15 +486,36 @@
                         iv: CryptoJS.enc.Utf8.parse(data.iv)
                     }
                 );
-
+                
                 // แปลงเป็นข้อความและแปลงเป็น JSON
                 return JSON.parse(decrypted.toString(CryptoJS.enc.Utf8));
-            } catch (error) {
-                console.error(`Error during decryption: ${error.message}`);
-                return null;
+            } catch (aesError) {
+                console.error('ถอดรหัสแบบ AES ไม่สำเร็จ:', aesError);
+                throw new Error('ไม่สามารถถอดรหัสได้ทั้งแบบ XOR และ AES');
             }
         }
+    } catch (error) {
+        console.error(`Error during decryption: ${error.message}`);
+        return null;
+    }
+}
 
+// เพิ่มฟังก์ชันสำหรับถอดการสลับตำแหน่งตัวอักษร
+function unscrambleString(str) {
+    let firstHalf = '';
+    let secondHalf = '';
+    
+    for (let i = 0; i < str.length; i++) {
+        if (i % 2 === 0) {
+            secondHalf += str[i];
+        } else {
+            firstHalf += str[i];
+        }
+    }
+    
+    return firstHalf + secondHalf;
+}
+        
         // ฟังก์ชัน utility สำหรับค้นหาองค์ประกอบตามข้อความ
         function findElementContainingText(selector, text) {
             const elements = document.querySelectorAll(selector);
