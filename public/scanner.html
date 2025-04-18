@@ -894,8 +894,10 @@ function unscrambleString(str) {
                 // แสดง overlay และ loading
                 document.getElementById('scanner-overlay').classList.remove('d-none');
 
+                 console.log("QR Code decoded successfully2:", decodedText);
                 // ประมวลผล QR Code
                 processQRCode(decodedText);
+                  console.log("QR Code decoded successfully2:", decodedText);
                 
             }
 
