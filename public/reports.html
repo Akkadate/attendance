@@ -653,7 +653,7 @@
             document.getElementById('searchStudentBtn').addEventListener('click', function() {
                 const studentId = document.getElementById('studentIdSearch').value.trim();
                 
-                // ตรวจสอบว่ารหัสนักศึกษามีรูปแบบที่ถูกต้อง (ตัวอย่างเช่น เป็นตัวเลข 8-13 หลัก)
+                // ตรวจสอบว่ารหัสนักศึกษามีรูปแบบที่ถูกต้อง (ตัวอย่างเช่น เป็นตัวเลข 3-13 หลัก)
                 const validStudentIdPattern = /^\d{3,13}$/;
                 
                 if (!studentId) {
@@ -665,7 +665,8 @@
                     showFeedback('รูปแบบรหัสนักศึกษาไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง', 'warning');
                     return;
                 }
-                console.log("Id:",studentId);
+                console.log("studentId:",studentId);
+                console.log(typeof studentId: "studentId");
                 loadStudentDetail(studentId);
             });
                      
