@@ -889,14 +889,14 @@ function unscrambleString(str) {
                     return;
                 }
 
-                console.log('QR Code decoded successfully:', decodedText);
+               
 
                 // แสดง overlay และ loading
                 document.getElementById('scanner-overlay').classList.remove('d-none');
 
                 // ประมวลผล QR Code
                 processQRCode(decodedText);
-                 console.log('QR Code decoded successfully2:', decodedText);
+                
             }
 
             // ฟังก์ชันเมื่อเกิดข้อผิดพลาดในการสแกน QR Code
