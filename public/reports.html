@@ -621,9 +621,10 @@
                 mode: "range",
                 dateFormat: "Y-m-d",
                 locale: "th",
-                allowInput: true
+                allowInput: true,
+                conjunction: " to " // กำหนดตัวเชื่อมระหว่างวันที่เริ่มต้นและสิ้นสุดเป็น "to" เสมอ
             });
-            
+                        
             flatpickr("#studentDateRange", {
                 mode: "range",
                 dateFormat: "Y-m-d",
@@ -725,10 +726,28 @@
                 let endDate = '';
                 
                 if (dateRange) {
-                    const dates = dateRange.split(' to ');
+                    // ลองแยกด้วย "to" ก่อน
+                    let dates = dateRange.split(' to ');
+                    // ถ้าไม่สำเร็จ ลองแยกด้วย "ถึง"
+                    if (dates.length === 1) {
+                        dates = dateRange.split(' ถึง ');
+                    }
                     startDate = dates[0];
                     endDate = dates.length > 1 ? dates[1] : dates[0];
                 }
+                
+                // ก่อนส่งค่าไป API ตรวจสอบว่าเป็นรูปแบบวันที่ที่ถูกต้อง (YYYY-MM-DD)
+                    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+                    if (startDate && !dateRegex.test(startDate)) {
+                        // ถ้าไม่ตรงรูปแบบ ให้ตัดเฉพาะวันที่ออกมา (ถ้ามี)
+                        const match = startDate.match(/\d{4}-\d{2}-\d{2}/);
+                        startDate = match ? match[0] : '';
+                    }
+                    // ทำเช่นเดียวกันกับ endDate
+                    if (endDate && !dateRegex.test(endDate)) {
+                        const match = endDate.match(/\d{4}-\d{2}-\d{2}/);
+                        endDate = match ? match[0] : '';
+                    }
                 
                 // สร้าง URL สำหรับ API
                 let url = '/api/reports/attendance-summary';
