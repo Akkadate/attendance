@@ -896,6 +896,7 @@ function unscrambleString(str) {
 
                 // ประมวลผล QR Code
                 processQRCode(decodedText);
+                 console.log('QR Code decoded successfully2:', decodedText);
             }
 
             // ฟังก์ชันเมื่อเกิดข้อผิดพลาดในการสแกน QR Code
@@ -905,7 +906,6 @@ function unscrambleString(str) {
                 console.debug('QR scanning in progress...');
             }
 
-            // ฟังก์ชันสำหรับประมวลผล QR Code
             // ฟังก์ชันสำหรับประมวลผล QR Code
             function processQRCode(qrData) {
                 // ถอดรหัสข้อมูล QR
