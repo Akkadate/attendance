@@ -1233,6 +1233,19 @@ app.get("/api/reports/student-attendance", requireAuth, async (req, res) => {
       });
     }
 
+    // ตรวจสอบว่า studentId มีอยู่จริงในฐานข้อมูลหรือไม่
+    const studentResult = await pool.query(
+      `SELECT * FROM student_details WHERE student_id = $1`,
+      [studentId]
+    );
+
+    // สร้างข้อมูลนักศึกษา (ถ้ามี) หรือใช้เพียงรหัสนักศึกษา
+    const studentInfo =
+      studentResult.rowCount > 0
+        ? studentResult.rows[0]
+        : { student_id: studentId };
+
+    // ต่อไปดึงข้อมูลการเข้าร่วมกิจกรรม (ถ้ามี)
     let sqlQuery = `
       SELECT 
         e.id as event_id,
@@ -1268,22 +1281,13 @@ app.get("/api/reports/student-attendance", requireAuth, async (req, res) => {
 
     const attendanceResult = await pool.query(sqlQuery, params);
 
-    // ดึงข้อมูลนักศึกษา
-    const studentResult = await pool.query(
-      `SELECT * FROM student_details WHERE student_id = $1`,
-      [studentId]
-    );
-
-    const studentInfo =
-      studentResult.rowCount > 0
-        ? studentResult.rows[0]
-        : { student_id: studentId };
-
+    // ส่งคืนข้อมูล ไม่ว่าจะพบประวัติการเข้าร่วมหรือไม่ก็ตาม
     return res.json({
       success: true,
       student: studentInfo,
-      attendance: attendanceResult.rows,
+      attendance: attendanceResult.rows || []
     });
+
   } catch (error) {
     console.error("เกิดข้อผิดพลาดในการดึงข้อมูลการเข้าร่วมของนักศึกษา:", error);
 
@@ -1291,6 +1295,7 @@ app.get("/api/reports/student-attendance", requireAuth, async (req, res) => {
       success: false,
       message:
         "เกิดข้อผิดพลาดในการดึงข้อมูลการเข้าร่วมของนักศึกษา กรุณาลองใหม่อีกครั้ง",
+      error: error.message
     });
   }
 });
