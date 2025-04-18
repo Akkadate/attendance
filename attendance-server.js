@@ -1223,6 +1223,7 @@ app.get("/api/reports/attendance-summary", requireAuth, async (req, res) => {
 
 // API รายงานการเข้าร่วมกิจกรรมรายบุคคล
 
+// API รายงานการเข้าร่วมกิจกรรมรายบุคคล
 app.get("/api/reports/student-attendance", requireAuth, async (req, res) => {
   try {
     // รับพารามิเตอร์จาก request
@@ -1242,37 +1243,42 @@ app.get("/api/reports/student-attendance", requireAuth, async (req, res) => {
     console.log("Processing student ID:", studentId);
     
     try {
-      // ดึงข้อมูลนักศึกษา (ถ้ามี)
-      const studentQuery = {
-        text: "SELECT * FROM student_details WHERE student_id = $1",
+      // ข้อมูลนักศึกษาพื้นฐาน (ไม่ต้องค้นหาจากตาราง student_details ที่ไม่มีอยู่)
+      const studentInfo = { student_id: studentId };
+      
+      // ใช้ข้อมูลจาก attendance_records เพื่อเติมข้อมูลนักศึกษาเพิ่มเติม (ถ้ามี)
+      const studentBasicQuery = {
+        text: `SELECT DISTINCT student_id, student_name, faculty, department 
+               FROM attendance_records 
+               WHERE student_id = $1 
+               LIMIT 1`,
         values: [studentId]
       };
       
-      console.log("Student query:", studentQuery);
-      const studentResult = await pool.query(studentQuery);
-      
-      // ข้อมูลพื้นฐานของนักศึกษา
-      const studentInfo = studentResult.rowCount > 0 
-        ? studentResult.rows[0] 
-        : { student_id: studentId };
+      const studentBasicResult = await pool.query(studentBasicQuery);
+      if (studentBasicResult.rowCount > 0) {
+        // เติมข้อมูลเพิ่มเติมจากผลลัพธ์
+        Object.assign(studentInfo, studentBasicResult.rows[0]);
+      }
       
       // ดึงข้อมูลการเข้าร่วมกิจกรรม
-        let attendanceQuery = {
-          text: `SELECT 
-            e.id as event_id,
-            e.event_name,
-            e.event_type,
-            e.start_time,
-            e.end_time,
-            a.check_in_time,
-            a.check_out_time,
-            a.status,
-            a.notes
-          FROM attendance_records a
-          LEFT JOIN events e ON e.id = a.event_id
-          WHERE a.student_id = $1`,
-          values: [studentId]
-        };
+      let attendanceQuery = {
+        text: `SELECT 
+          e.id as event_id,
+          e.event_name,
+          e.event_type,
+          e.start_time,
+          e.end_time,
+          a.check_in_time,
+          a.check_out_time,
+          a.status,
+          a.notes
+        FROM attendance_records a
+        LEFT JOIN events e ON e.id = a.event_id
+        WHERE a.student_id = $1`,
+        values: [studentId]
+      };
+      
       // เพิ่มเงื่อนไขวันที่ถ้ามี
       if (startDate) {
         attendanceQuery.text += " AND e.start_time >= $" + (attendanceQuery.values.length + 1);
@@ -1289,6 +1295,8 @@ app.get("/api/reports/student-attendance", requireAuth, async (req, res) => {
       
       console.log("Attendance query:", attendanceQuery);
       const attendanceResult = await pool.query(attendanceQuery);
+      
+      console.log(`Found ${attendanceResult.rowCount} attendance records for student ${studentId}`);
       
       // ส่งผลลัพธ์กลับไป
       return res.json({
