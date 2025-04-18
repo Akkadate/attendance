@@ -426,6 +426,13 @@
             // ค่า config อื่นๆ
         };
 
+        // เพิ่มตัวแปรเพื่อป้องกันการสแกนซ้ำ
+        let lastScannedCode = '';
+        let isProcessing = false;
+        let scanCooldown = false;
+        let cooldownTime = 2000; // 2 วินาทีระหว่างการสแกนแต่ละครั้ง
+
+        
         // โหลด config จาก server
         async function loadConfig() {
             try {
@@ -793,7 +800,7 @@ function unscrambleString(str) {
                             )
                                 .then(() => {
                                     showFeedback('เริ่มการสแกนสำเร็จ', 'success');
-                                    console.log("773 onQRCodeSuccess: ", onQRCodeSuccess);
+                                  
                                 })
                                 .catch(err => {
                                     console.error('Error starting scanner:', err);
@@ -895,35 +902,64 @@ function unscrambleString(str) {
                 }
 
             // ฟังก์ชันหยุด scanner
-            function stopScanner() {
-                if (html5QrCodeScanner) {
-                    html5QrCodeScanner.stop().then(() => {
-                        console.log('Scanner stopped');
-                    }).catch(err => {
-                        console.error('Error stopping scanner:', err);
-                    });
-                }
-            }
+            // 5. แก้ไขฟังก์ชัน stopScanner เพื่อรีเซ็ตค่าต่างๆ
+function stopScanner() {
+    if (html5QrCodeScanner) {
+        html5QrCodeScanner.stop().then(() => {
+            console.log('Scanner stopped');
+            // รีเซ็ตค่าต่างๆ เมื่อหยุดการสแกน
+            lastScannedCode = '';
+            isProcessing = false;
+            scanCooldown = false;
+        }).catch(err => {
+            console.error('Error stopping scanner:', err);
+        });
+    }
+}
 
-            // ฟังก์ชันเมื่อสแกน QR Code สำเร็จ
-            function onQRCodeSuccess(decodedText, decodedResult) {
+                // 2. แก้ไขฟังก์ชัน onQRCodeSuccess ให้เป็นดังนี้
+                 function onQRCodeSuccess(decodedText, decodedResult) {
                 // ตรวจสอบว่าได้เลือกกิจกรรมหรือไม่
                 if (!selectedEventId) {
                     showFeedback('กรุณาเลือกกิจกรรม/รายวิชาก่อนสแกน', 'warning');
                     return;
                 }
-
-               
-
+            
+                // ป้องกันการสแกนซ้ำในระยะเวลาสั้นๆ
+                if (scanCooldown) {
+                    console.log("อยู่ในช่วง cooldown, ข้ามการสแกนนี้");
+                    return;
+                }
+            
+                // ป้องกันการสแกนโค้ดเดิมซ้ำๆ
+                if (decodedText === lastScannedCode) {
+                    console.log("ข้าม QR Code ซ้ำ:", decodedText.substring(0, 20) + "...");
+                    return;
+                }
+            
+                // ป้องกันการประมวลผลหลายครั้งพร้อมกัน
+                if (isProcessing) {
+                    console.log("กำลังประมวลผล QR Code อื่นอยู่, ข้ามการสแกนนี้");
+                    return;
+                }
+            
+                // บันทึกโค้ดล่าสุดและตั้งค่าสถานะการประมวลผล
+                lastScannedCode = decodedText;
+                isProcessing = true;
+                scanCooldown = true;
+            
+                // ตั้งเวลาให้สามารถสแกนได้อีกครั้งหลังจากผ่านไป cooldownTime
+                setTimeout(() => {
+                    scanCooldown = false;
+                }, cooldownTime);
+            
                 // แสดง overlay และ loading
                 document.getElementById('scanner-overlay').classList.remove('d-none');
-
-                 console.log("897-QR Code decoded successfully1:", decodedText);
+            
+                console.log("QR Code scanned:", decodedText.substring(0, 20) + "...");
                 
                 // ประมวลผล QR Code
                 processQRCode(decodedText);
-                  console.log("901-QR Code decoded successfully2:", decodedText);
-                
             }
 
             // ฟังก์ชันเมื่อเกิดข้อผิดพลาดในการสแกน QR Code
@@ -934,24 +970,24 @@ function unscrambleString(str) {
             }
 
             // ฟังก์ชันสำหรับประมวลผล QR Code
-            function processQRCode(qrData) {
-            console.log("QR Code decoded successfully3:", qrData);
-            
-            try {
-                // ส่งข้อมูล QR code ทั้งหมดไปประมวลผลที่ server โดยตรง
-                // ไม่ต้องถอดรหัสที่ฝั่ง client
-                fetch('/api/process-qrcode', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        qrData: qrData,  // ส่ง QR data ที่เข้ารหัสไปยัง server โดยตรง
-                        eventId: selectedEventId
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
+            // 3. แก้ไขฟังก์ชัน processQRCode ให้มีการจัดการ isProcessing flag
+function processQRCode(qrData) {
+    console.log("Processing QR Code...");
+    
+    try {
+        // ส่งข้อมูล QR code ไปประมวลผลที่ server
+        fetch('/api/process-qrcode', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                qrData: qrData,
+                eventId: selectedEventId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
             // ซ่อน overlay
             document.getElementById('scanner-overlay').classList.add('d-none');
 
@@ -959,34 +995,91 @@ function unscrambleString(str) {
                 // แสดงข้อมูลนักศึกษา
                 displayStudentInfo(data.studentInfo, data.isCheckOut);
 
+                // เล่นเสียงเมื่อสแกนสำเร็จ (เพิ่มการตอบสนองให้ผู้ใช้)
+                playSuccessSound();
+
                 // แสดงข้อความแจ้งเตือน
                 showFeedback(data.message, 'success');
 
                 // โหลดรายชื่อใหม่
                 loadAttendanceList(selectedEventId);
             } else {
+                // เล่นเสียงเมื่อสแกนไม่สำเร็จ
+                playErrorSound();
+                
                 // ซ่อนข้อมูลนักศึกษา
                 document.getElementById('studentInfo').style.display = 'none';
 
                 // แสดงข้อความแจ้งเตือนข้อผิดพลาด
                 showFeedback(data.message, 'error');
             }
-            })
-                    .catch(error => {
-                        // ซ่อน overlay
-                        document.getElementById('scanner-overlay').classList.add('d-none');
+            
+            // คืนค่าสถานะการประมวลผล
+            isProcessing = false;
+        })
+        .catch(error => {
+            // ซ่อน overlay
+            document.getElementById('scanner-overlay').classList.add('d-none');
+            
+            // เล่นเสียงเมื่อเกิดข้อผิดพลาด
+            playErrorSound();
 
-                        console.error('Error processing QR code:', error);
-                        showFeedback('เกิดข้อผิดพลาดในการประมวลผล QR Code', 'error');
-                    });
-                } catch (error) {
-                    console.error("Error processing QR code:", error);
-                    document.getElementById('scanner-overlay').classList.add('d-none');
-                    showFeedback('เกิดข้อผิดพลาดในการประมวลผล QR Code: ' + error.message, 'error');
-                }                                               
-            }
+            console.error('Error processing QR code:', error);
+            showFeedback('เกิดข้อผิดพลาดในการประมวลผล QR Code', 'error');
+            
+            // คืนค่าสถานะการประมวลผล แม้เกิดข้อผิดพลาด
+            isProcessing = false;
+        });
+    } catch (error) {
+        console.error("Error processing QR code:", error);
+        document.getElementById('scanner-overlay').classList.add('d-none');
+        showFeedback('เกิดข้อผิดพลาดในการประมวลผล QR Code: ' + error.message, 'error');
+        
+        // คืนค่าสถานะการประมวลผล แม้เกิดข้อผิดพลาด
+        isProcessing = false;
+    }
+}
 
+// 4. เพิ่มฟังก์ชันเล่นเสียงเพื่อให้ผู้ใช้รู้ว่าได้สแกนแล้ว (ช่วยสร้างประสบการณ์ผู้ใช้ที่ดี)
+function playSuccessSound() {
+    // สร้าง Oscillator สำหรับเล่นเสียง success
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(1318.51, audioContext.currentTime); // E6
+    oscillator.frequency.setValueAtTime(1760.00, audioContext.currentTime + 0.1); // A6
+    
+    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.5);
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.start();
+    oscillator.stop(audioContext.currentTime + 0.5);
+}
 
+function playErrorSound() {
+    // สร้าง Oscillator สำหรับเล่นเสียง error
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.type = 'sawtooth';
+    oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // A4
+    oscillator.frequency.setValueAtTime(349.23, audioContext.currentTime + 0.1); // F4
+    
+    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.5);
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.start();
+    oscillator.stop(audioContext.currentTime + 0.5);
+}
             // ฟังก์ชันสำหรับแสดงข้อมูลนักศึกษา
             function displayStudentInfo(studentInfo, isCheckOut) {
                 const studentInfoElement = document.getElementById('studentInfo');
