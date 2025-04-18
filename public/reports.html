@@ -649,16 +649,26 @@
                     document.getElementById('noEventSelected').classList.remove('d-none');
                 }
             });
-            
+
             document.getElementById('searchStudentBtn').addEventListener('click', function() {
-                const studentId = document.getElementById('studentIdSearch').value;
-                if (studentId) {
-                    loadStudentDetail(studentId);
-                } else {
+                const studentId = document.getElementById('studentIdSearch').value.trim();
+                
+                // ตรวจสอบว่ารหัสนักศึกษามีรูปแบบที่ถูกต้อง (ตัวอย่างเช่น เป็นตัวเลข 8-13 หลัก)
+                const validStudentIdPattern = /^\d{8,13}$/;
+                
+                if (!studentId) {
                     showFeedback('กรุณาระบุรหัสนักศึกษา', 'warning');
+                    return;
                 }
+                
+                if (!validStudentIdPattern.test(studentId)) {
+                    showFeedback('รูปแบบรหัสนักศึกษาไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง', 'warning');
+                    return;
+                }
+                
+                loadStudentDetail(studentId);
             });
-            
+                     
             document.getElementById('exportEventReportBtn').addEventListener('click', function() {
                 if (selectedEvent) {
                     exportEventReport(selectedEvent.id);
@@ -1166,8 +1176,20 @@
                 if (endDate) url += `&endDate=${endDate}`;
                 
                 fetch(url)
-                .then(response => response.json())
-                .then(data => {
+                    .then(response => {
+                        if (!response.ok) {
+                            // จัดการกรณี HTTP error (เช่น 500)
+                            if (response.status === 500) {
+                                throw new Error('เกิดข้อผิดพลาดที่เซิร์ฟเวอร์ กรุณาลองใหม่อีกครั้ง');
+                            } else if (response.status === 404) {
+                                throw new Error('ไม่พบข้อมูลนักศึกษา');
+                            } else {
+                                throw new Error('เกิดข้อผิดพลาดในการโหลดข้อมูล');
+                            }
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
                     hideLoading();
                     
                     if (data.success) {
@@ -1299,12 +1321,12 @@
                         showFeedback('ไม่พบข้อมูลนักศึกษา', 'warning');
                     }
                 })
-                .catch(error => {
-                    hideLoading();
-                    console.error('Error loading student details:', error);
-                    showFeedback('เกิดข้อผิดพลาดในการโหลดข้อมูลนักศึกษา', 'error');
-                });
-            }
+                                .catch(error => {
+                        hideLoading();
+                        console.error('Error loading student details:', error);
+                        showFeedback(error.message || 'เกิดข้อผิดพลาดในการโหลดข้อมูล', 'error');
+                    });
+                }
             
             // ฟังก์ชันส่งออกข้อมูลรายกิจกรรม
             function exportEventReport(eventId) {
