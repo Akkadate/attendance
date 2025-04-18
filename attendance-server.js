@@ -78,6 +78,8 @@ pool.connect((err) => {
 });
 
 // Encryption/Decryption Module ตามการทำงานของบัตรนักศึกษา
+// แก้ไขที่ Encryption/Decryption Module ในไฟล์ attendance-server.js ประมาณบรรทัด 95-140
+
 const EncryptionModule = {
     decrypt: function(encryptedString, secretKey = process.env.ENCRYPTION_SECRET) {
         try {
@@ -103,14 +105,15 @@ const EncryptionModule = {
                 console.log("101-ถอดแล้ว1", decryptedObj);
               
                 // แปลงชื่อฟิลด์ให้ตรงกับที่ระบบคาดหวัง
+                // ปรับปรุงให้ map ฟิลด์ที่ได้จาก student-card.html ให้ตรงกับที่ระบบคาดหวัง
                 return {
                     sid: decryptedObj.s || decryptedObj.sid,
                     name: decryptedObj.n || decryptedObj.name,
                     exp: decryptedObj.e || decryptedObj.exp,
                     ts: decryptedObj.t || decryptedObj.ts,
                     ver: decryptedObj.v || decryptedObj.ver,
-                    fac: decryptedObj.f, 
-                    dep: decryptedObj.d 
+                    fac: decryptedObj.f || decryptedObj.fac, // เพิ่ม fallback
+                    dep: decryptedObj.d || decryptedObj.dep  // เพิ่ม fallback
                 };
             } 
             // กรณีที่เป็น Base64 string ที่มาจากการเข้ารหัส XOR
@@ -132,17 +135,18 @@ const EncryptionModule = {
                     // แปลงเป็น JavaScript object
                     const decryptedObj = JSON.parse(result);
                   
-                    console.log("132-ถอดแล้ว2",decryptedObj);
+                    console.log("132-ถอดแล้ว2", decryptedObj);
                   
                     // แปลงชื่อฟิลด์ให้ตรงกับที่ระบบคาดหวัง
+                    // แก้ไขตรงนี้เช่นกันเพื่อให้รองรับการ mapping ฟิลด์ที่สมบูรณ์
                     return {
                         sid: decryptedObj.s || decryptedObj.sid,
                         name: decryptedObj.n || decryptedObj.name,
                         exp: decryptedObj.e || decryptedObj.exp,
                         ts: decryptedObj.t || decryptedObj.ts,
                         ver: decryptedObj.v || decryptedObj.ver,
-                        fac: decryptedObj.f,
-                        dep: decryptedObj.d
+                        fac: decryptedObj.f || decryptedObj.fac,
+                        dep: decryptedObj.d || decryptedObj.dep
                     };
                 } catch (xorError) {
                     console.error('XOR decryption failed:', xorError);
@@ -155,6 +159,7 @@ const EncryptionModule = {
         }
     },
     
+   
     // ฟังก์ชันถอดการสลับตำแหน่งตัวอักษร
     unscrambleString: function(str) {
         let firstHalf = '';
