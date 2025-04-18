@@ -953,7 +953,7 @@
                     
                     const presentCount = Number(item.present_count || 0);
                     const lateCount = Number(item.late_count || 0);
-                    const absentCount = Number((item.absent_count || 0) + (item.excused_count || 0));
+                    const absentCount = Number(item.absent_count || 0) + Number(item.excused_count || 0);
                     const totalCount = Number(presentCount + lateCount + absentCount);
                     
                     const row = document.createElement('tr');
