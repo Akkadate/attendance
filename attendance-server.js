@@ -417,7 +417,8 @@ app.post("/api/process-qrcode", requireAuth, async (req, res) => {
       } else {
         // ถอดรหัสที่ server
         decodedData = EncryptionModule.decrypt(qrData);
-
+        console.log("ข้อมุลถอดรหัส",decodedData);
+        
         // ถ้าถอดรหัสไม่สำเร็จ ให้ลองใช้วิธีการถอดรหัสแบบง่าย
         if (!decodedData) {
           decodedData = EncryptionModule.parseSimpleFormat(qrData);
