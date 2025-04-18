@@ -376,6 +376,8 @@ app.post("/api/process-qrcode", requireAuth, async (req, res) => {
   try {
     const { qrData, eventId, studentInfo } = req.body;
 
+    console.log("379-qrData:",qrData);
+    
     if (!qrData || !eventId) {
       return res.status(400).json({
         success: false,
@@ -423,9 +425,10 @@ app.post("/api/process-qrcode", requireAuth, async (req, res) => {
         
         // ถอดรหัสที่ server
         console.log("425-ข้อมูล QR",qrData)
+        
         decodedData = EncryptionModule.decrypt(qrData);
         
-        console.log("426-ข้อมูลถอดรหัส",decodedData);
+        console.log("429-ข้อมูลถอดรหัส",decodedData);
         
         // ถ้าถอดรหัสไม่สำเร็จ ให้ลองใช้วิธีการถอดรหัสแบบง่าย
         if (!decodedData) {
