@@ -1163,8 +1163,13 @@
                 let startDate = '';
                 let endDate = '';
                 
-                if (dateRange) {
-                    const dates = dateRange.split(' to ');
+               if (dateRange) {
+                    // ลองแยกด้วย "to" ก่อน
+                    let dates = dateRange.split(' to ');
+                    // ถ้าไม่สำเร็จ ลองแยกด้วย "ถึง"
+                    if (dates.length === 1) {
+                        dates = dateRange.split(' ถึง ');
+                    }
                     startDate = dates[0];
                     endDate = dates.length > 1 ? dates[1] : dates[0];
                 }
