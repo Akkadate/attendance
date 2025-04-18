@@ -445,18 +445,19 @@
 
 
         // เพิ่มฟังก์ชันนี้ใน scanner.html
-        // แก้ไขฟังก์ชัน decryptQRData ในไฟล์ scanner.html
-        function decryptQRData(encryptedString, secretKey) {
-            try {
+// แก้ไขที่ฟังก์ชัน decryptQRData ในไฟล์ scanner.html ประมาณบรรทัด 893-944
+
+function decryptQRData(encryptedString, secretKey) {
+    try {
         // รหัส Base64 ก่อน
         const base64Decoded = atob(encryptedString);
-        console.log("base64 Decoded =",base64Decoded);
+        console.log("base64 Decoded =", base64Decoded);
         
         // ทดลองรหัสแบบใหม่ (XOR + scramble)
         try {
             // ถอดการสลับตำแหน่งตัวอักษร (unscramble)
             const unscrambled = unscrambleString(base64Decoded);
-            console.log("unscrambled is =",unscrambled);
+            console.log("unscrambled is =", unscrambled);
             
             // ถอดรหัส XOR
             let result = '';
@@ -466,7 +467,18 @@
             }
             
             // แปลงเป็น JavaScript object
-            return JSON.parse(result);
+            const parsedResult = JSON.parse(result);
+            
+            // ตรวจสอบและแปลงชื่อฟิลด์ให้ตรงกับที่ server คาดหวัง
+            return {
+                sid: parsedResult.s || parsedResult.sid,
+                name: parsedResult.n || parsedResult.name,
+                exp: parsedResult.e || parsedResult.exp,
+                ts: parsedResult.t || parsedResult.ts,
+                ver: parsedResult.v || parsedResult.ver,
+                fac: parsedResult.f || parsedResult.fac,
+                dep: parsedResult.d || parsedResult.dep
+            };
         } catch (xorError) {
             console.error('ถอดรหัสแบบ XOR ไม่สำเร็จ:', xorError);
             
@@ -490,7 +502,18 @@
                 );
                 
                 // แปลงเป็นข้อความและแปลงเป็น JSON
-                return JSON.parse(decrypted.toString(CryptoJS.enc.Utf8));
+                const parsedResult = JSON.parse(decrypted.toString(CryptoJS.enc.Utf8));
+                
+                // ตรวจสอบและแปลงชื่อฟิลด์ให้ตรงกับที่ server คาดหวัง
+                return {
+                    sid: parsedResult.s || parsedResult.sid,
+                    name: parsedResult.n || parsedResult.name,
+                    exp: parsedResult.e || parsedResult.exp,
+                    ts: parsedResult.t || parsedResult.ts,
+                    ver: parsedResult.v || parsedResult.ver,
+                    fac: parsedResult.f || parsedResult.fac,
+                    dep: parsedResult.d || parsedResult.dep
+                };
             } catch (aesError) {
                 console.error('ถอดรหัสแบบ AES ไม่สำเร็จ:', aesError);
                 throw new Error('ไม่สามารถถอดรหัสได้ทั้งแบบ XOR และ AES');
