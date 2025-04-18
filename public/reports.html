@@ -932,10 +932,10 @@
                         eventType = 'สอบ';
                     }
                     
-                    const presentCount = item.present_count || 0;
-                    const lateCount = item.late_count || 0;
-                    const absentCount = (item.absent_count || 0) + (item.excused_count || 0);
-                    const totalCount = presentCount + lateCount + absentCount;
+                    const presentCount = Number(item.present_count || 0);
+                    const lateCount = Number(item.late_count || 0);
+                    const absentCount = Number((item.absent_count || 0) + (item.excused_count || 0));
+                    const totalCount = Number(presentCount + lateCount + absentCount);
                     
                     const row = document.createElement('tr');
                     row.innerHTML = `
@@ -1052,10 +1052,10 @@
                         document.getElementById('eventDetailStatus').innerHTML = statusText;
                         
                         // อัปเดตสถิติการเข้าร่วม
-                        const presentCount = data.summary.present_count || 0;
-                        const lateCount = data.summary.late_count || 0;
-                        const absentCount = (data.summary.absent_count || 0) + (data.summary.excused_count || 0);
-                        const totalCount = presentCount + lateCount + absentCount;
+                        const presentCount = Number(data.summary.present_count || 0);
+                        const lateCount = Number(data.summary.late_count || 0);
+                        const absentCount = Number((data.summary.absent_count || 0) + (data.summary.excused_count || 0));
+                        const totalCount = Number(presentCount + lateCount + absentCount);
                         
                         document.getElementById('eventPresentCount').textContent = presentCount;
                         document.getElementById('eventLateCount').textContent = lateCount;
