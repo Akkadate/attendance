@@ -98,7 +98,8 @@ const EncryptionModule = {
                 
                 // แปลงเป็น string และ parse เป็น JSON
                 const decryptedObj = JSON.parse(decrypted.toString(CryptoJS.enc.Utf8));
-                console.log("ถอดแล้ว", decryptedObj)
+                console.log("ถอดแล้ว101", decryptedObj)
+              
                 // แปลงชื่อฟิลด์ให้ตรงกับที่ระบบคาดหวัง
                 return {
                     sid: decryptedObj.s || decryptedObj.sid,
@@ -106,8 +107,8 @@ const EncryptionModule = {
                     exp: decryptedObj.e || decryptedObj.exp,
                     ts: decryptedObj.t || decryptedObj.ts,
                     ver: decryptedObj.v || decryptedObj.ver,
-                    fac: decryptedObj.f || decryptedObj.fac,
-                    dep: decryptedObj.d || decryptedObj.dep
+                    fac: decryptedObj.f, 
+                    dep: decryptedObj.d 
                 };
             } 
             // กรณีที่เป็น Base64 string ที่มาจากการเข้ารหัส XOR
@@ -128,7 +129,8 @@ const EncryptionModule = {
                     
                     // แปลงเป็น JavaScript object
                     const decryptedObj = JSON.parse(result);
-                    console.log("ถอดแล้ว2",decryptedObj)
+                    console.log("ถอดแล้ว2",decryptedObj);
+                  
                     // แปลงชื่อฟิลด์ให้ตรงกับที่ระบบคาดหวัง
                     return {
                         sid: decryptedObj.s || decryptedObj.sid,
@@ -136,8 +138,8 @@ const EncryptionModule = {
                         exp: decryptedObj.e || decryptedObj.exp,
                         ts: decryptedObj.t || decryptedObj.ts,
                         ver: decryptedObj.v || decryptedObj.ver,
-                        fac: decryptedObj.f || decryptedObj.fac,
-                        dep: decryptedObj.d || decryptedObj.dep
+                        fac: decryptedObj.f,
+                        dep: decryptedObj.d
                     };
                 } catch (xorError) {
                     console.error('XOR decryption failed:', xorError);
