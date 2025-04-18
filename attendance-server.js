@@ -106,8 +106,8 @@ const EncryptionModule = {
                     exp: decryptedObj.e || decryptedObj.exp,
                     ts: decryptedObj.t || decryptedObj.ts,
                     ver: decryptedObj.v || decryptedObj.ver,
-                    fac: decryptedObj.fac,
-                    dep: decryptedObj.dep
+                    fac: decryptedObj.f || decryptedObj.fac,
+                    dep: decryptedObj.d || decryptedObj.dep
                 };
             } 
             // กรณีที่เป็น Base64 string ที่มาจากการเข้ารหัส XOR
@@ -136,8 +136,8 @@ const EncryptionModule = {
                         exp: decryptedObj.e || decryptedObj.exp,
                         ts: decryptedObj.t || decryptedObj.ts,
                         ver: decryptedObj.v || decryptedObj.ver,
-                        fac: decryptedObj.fac,
-                        dep: decryptedObj.dep
+                        fac: decryptedObj.f || decryptedObj.fac,
+                        dep: decryptedObj.d || decryptedObj.dep
                     };
                 } catch (xorError) {
                     console.error('XOR decryption failed:', xorError);
