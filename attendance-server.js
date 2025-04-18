@@ -95,10 +95,11 @@ const EncryptionModule = {
                 const decrypted = CryptoJS.AES.decrypt(data.e, secretKey, { 
                     iv: CryptoJS.enc.Utf8.parse(data.iv) 
                 });
-                
+
+               console.log("99-ถอดแล้ว0", decrypted)
                 // แปลงเป็น string และ parse เป็น JSON
                 const decryptedObj = JSON.parse(decrypted.toString(CryptoJS.enc.Utf8));
-                console.log("ถอดแล้ว101", decryptedObj)
+                console.log("101-ถอดแล้ว1", decryptedObj)
               
                 // แปลงชื่อฟิลด์ให้ตรงกับที่ระบบคาดหวัง
                 return {
@@ -129,7 +130,7 @@ const EncryptionModule = {
                     
                     // แปลงเป็น JavaScript object
                     const decryptedObj = JSON.parse(result);
-                    console.log("ถอดแล้ว2",decryptedObj);
+                    console.log("132-ถอดแล้ว2",decryptedObj);
                   
                     // แปลงชื่อฟิลด์ให้ตรงกับที่ระบบคาดหวัง
                     return {
