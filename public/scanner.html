@@ -420,16 +420,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 
     <script>
-        // เริ่มต้นด้วย default config ที่ว่างเปล่า
+
         let CONFIG = {
-            ENCRYPTION_SECRET: "",
+           ENCRYPTION_SECRET: "",
             // ค่า config อื่นๆ
         };
-
-        // กำหนดตัวแปรสำหรับเก็บค่า instance ของ scanner
-        let html5QrCodeScanner = null;
-        let selectedEventId = null;
-        let cameraId = null;
 
         // โหลด config จาก server
         async function loadConfig() {
@@ -439,206 +434,191 @@
                     const config = await response.json();
                     // อัปเดตค่า config
                     Object.assign(CONFIG, config);
-                    console.log("Config loaded successfully:", CONFIG);
+                    console.log("Config loaded successfully");
                 } else {
-                    console.error("Failed to load config:", response.status);
-                    showFeedback("ไม่สามารถโหลดการตั้งค่าได้ กรุณาลองใหม่อีกครั้ง", "warning");
+                    console.error("Failed to load config");
                 }
             } catch (error) {
                 console.error("Error loading config:", error);
-                showFeedback("เกิดข้อผิดพลาดในการโหลดการตั้งค่า", "error");
             }
         }
 
-        // เพิ่มฟังก์ชัน init สำหรับเริ่มต้นแอปพลิเคชัน
-        async function initApp() {
-            try {
-                showLoading();
-                console.log("กำลังเริ่มต้นแอปพลิเคชัน...");
-                
-                // โหลด config ก่อน
-                await loadConfig();
-                
-                // ตรวจสอบการล็อกอิน
-                await checkAuthentication();
-                
-                // โหลดรายการกิจกรรม/รายวิชา - สำคัญสำหรับการแสดง dropdown
-                await loadEvents();
-                
-                // ตั้งค่า event listeners
-                setupEventListeners();
-                
-                hideLoading();
-                console.log("เริ่มต้นแอปพลิเคชันสำเร็จ");
-            } catch (error) {
-                hideLoading();
-                console.error("Error initializing application:", error);
-                showFeedback("เกิดข้อผิดพลาดในการเริ่มต้นแอปพลิเคชัน: " + error.message, "error");
-            }
-        }
 
-        // ฟังก์ชันสำหรับถอดการสลับตำแหน่งตัวอักษร
-        function unscrambleString(str) {
-            let firstHalf = '';
-            let secondHalf = '';
-            
-            for (let i = 0; i < str.length; i++) {
-                if (i % 2 === 0) {
-                    secondHalf += str[i];
-                } else {
-                    firstHalf += str[i];
-                }
-            }
-            
-            return firstHalf + secondHalf;
-        }
-        
-        // ฟังก์ชัน decryptQRData
+        // เพิ่มฟังก์ชันนี้ใน scanner.html
+        // แก้ไขฟังก์ชัน decryptQRData ในไฟล์ scanner.html
         function decryptQRData(encryptedString, secretKey) {
             try {
-                // ถอดรหัส Base64 ก่อน
-                const base64Decoded = atob(encryptedString);
-                console.log("Base64 decoded successfully");
+        // ถอดรหัส Base64 ก่อน
+        const base64Decoded = atob(encryptedString);
+        console.log("base64 Decoded =",base64Decoded);
+        
+        // ทดลองถอดรหัสแบบใหม่ (XOR + scramble)
+        try {
+            // ถอดการสลับตำแหน่งตัวอักษร (unscramble)
+            const unscrambled = unscrambleString(base64Decoded);
+            console.log("unscrambled is =",unscrambled);
+            
+            // ถอดรหัส XOR
+            let result = '';
+            for (let i = 0; i < unscrambled.length; i++) {
+                const charCode = unscrambled.charCodeAt(i) ^ secretKey.charCodeAt(i % secretKey.length);
+                result += String.fromCharCode(charCode);
+            }
+            
+            // แปลงเป็น JavaScript object
+            return JSON.parse(result);
+        } catch (xorError) {
+            console.error('ถอดรหัสแบบ XOR ไม่สำเร็จ:', xorError);
+            
+            // ทดลองถอดรหัสแบบเดิม (AES)
+            try {
+                const data = JSON.parse(encryptedString);
                 
-                // ทดลองถอดรหัสแบบใหม่ (XOR + scramble)
-                try {
-                    // ถอดการสลับตำแหน่งตัวอักษร (unscramble)
-                    const unscrambled = unscrambleString(base64Decoded);
-                    
-                    // ถอดรหัส XOR
-                    let result = '';
-                    for (let i = 0; i < unscrambled.length; i++) {
-                        const charCode = unscrambled.charCodeAt(i) ^ secretKey.charCodeAt(i % secretKey.length);
-                        result += String.fromCharCode(charCode);
+                // ตรวจสอบ HMAC signature
+                const computedHmac = CryptoJS.HmacSHA256(data.e + data.iv, secretKey).toString();
+                if (computedHmac !== data.s) {
+                    throw new Error('Invalid signature - data may be tampered');
+                }
+                
+                // ถอดรหัสข้อมูล
+                const decrypted = CryptoJS.AES.decrypt(
+                    data.e,
+                    secretKey,
+                    {
+                        iv: CryptoJS.enc.Utf8.parse(data.iv)
                     }
-                    
-                    // แปลงเป็น JavaScript object
-                    return JSON.parse(result);
-                } catch (xorError) {
-                    console.error('ถอดรหัสแบบ XOR ไม่สำเร็จ:', xorError);
-                    
-                    // ทดลองถอดรหัสแบบเดิม (AES)
-                    try {
-                        const data = JSON.parse(encryptedString);
-                        
-                        // ตรวจสอบ HMAC signature
-                        const computedHmac = CryptoJS.HmacSHA256(data.e + data.iv, secretKey).toString();
-                        if (computedHmac !== data.s) {
-                            throw new Error('Invalid signature - data may be tampered');
-                        }
-                        
-                        // ถอดรหัสข้อมูล
-                        const decrypted = CryptoJS.AES.decrypt(
-                            data.e,
-                            secretKey,
-                            {
-                                iv: CryptoJS.enc.Utf8.parse(data.iv)
-                            }
-                        );
-                        
-                        // แปลงเป็นข้อความและแปลงเป็น JSON
-                        return JSON.parse(decrypted.toString(CryptoJS.enc.Utf8));
-                    } catch (aesError) {
-                        console.error('ถอดรหัสแบบ AES ไม่สำเร็จ:', aesError);
-                        throw new Error('ไม่สามารถถอดรหัสได้ทั้งแบบ XOR และ AES');
-                    }
-                          }
-                      } catch (error) {
-                          console.error(`Error during decryption: ${error.message}`);
-                          return null;
-                      }
-                  }
-                  
-                  // ฟังก์ชัน utility สำหรับค้นหาองค์ประกอบตามข้อความ
-                  function findElementContainingText(selector, text) {
-                      const elements = document.querySelectorAll(selector);
-                      for (let i = 0; i < elements.length; i++) {
-                          if (elements[i].textContent.includes(text)) {
-                              return elements[i];
-                          }
-                      }
-                      return null;
-                  }
+                );
+                
+                // แปลงเป็นข้อความและแปลงเป็น JSON
+                return JSON.parse(decrypted.toString(CryptoJS.enc.Utf8));
+            } catch (aesError) {
+                console.error('ถอดรหัสแบบ AES ไม่สำเร็จ:', aesError);
+                throw new Error('ไม่สามารถถอดรหัสได้ทั้งแบบ XOR และ AES');
+            }
+        }
+    } catch (error) {
+        console.error(`Error during decryption: ${error.message}`);
+        return null;
+    }
+}
 
-                      // แยกการตั้งค่า event listeners ออกเป็นฟังก์ชันต่างหาก
-                      function setupEventListeners() {
-                          // ปุ่มขออนุญาตเข้าถึงกล้องใหม่
-                          document.getElementById('requestCameraPermission').addEventListener('click', function () {
-                      // แสดง loading
-                      showLoading();
+// เพิ่มฟังก์ชันสำหรับถอดการสลับตำแหน่งตัวอักษร
+function unscrambleString(str) {
+    let firstHalf = '';
+    let secondHalf = '';
+    
+    for (let i = 0; i < str.length; i++) {
+        if (i % 2 === 0) {
+            secondHalf += str[i];
+        } else {
+            firstHalf += str[i];
+        }
+    }
+    
+    return firstHalf + secondHalf;
+}
+        
+        // ฟังก์ชัน utility สำหรับค้นหาองค์ประกอบตามข้อความ
+        function findElementContainingText(selector, text) {
+            const elements = document.querySelectorAll(selector);
+            for (let i = 0; i < elements.length; i++) {
+                if (elements[i].textContent.includes(text)) {
+                    return elements[i];
+                }
+            }
+            return null;
+        }
 
-                      navigator.mediaDevices.getUserMedia({ video: true })
-                          .then(function (stream) {
-                              // อนุญาตเข้าถึงกล้องสำเร็จ
-                              stream.getTracks().forEach(track => track.stop()); // หยุด stream ทันที
-                              hideLoading();
-                              showFeedback('ได้รับอนุญาตให้เข้าถึงกล้องแล้ว', 'success');
+        // ตรวจสอบสถานะการล็อกอิน
+        document.addEventListener('DOMContentLoaded', async function () {
+            await loadConfig();
+            // ปุ่มขออนุญาตเข้าถึงกล้องใหม่
+            document.getElementById('requestCameraPermission').addEventListener('click', function () {
+                // แสดง loading
+                showLoading();
+
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(function (stream) {
+                        // อนุญาตเข้าถึงกล้องสำเร็จ
+                        stream.getTracks().forEach(track => track.stop()); // หยุด stream ทันที
+                        hideLoading();
+                        showFeedback('ได้รับอนุญาตให้เข้าถึงกล้องแล้ว', 'success');
 
                         // ซ่อนปุ่มขออนุญาต
                         document.getElementById('requestCameraPermission').classList.add('d-none');
 
                         // เริ่มการสแกนใหม่
                         startScanner();
-                          })
-                          .catch(function (error) {
-                              hideLoading();
-                              showFeedback('ไม่สามารถเข้าถึงกล้องได้: ' + error.message, 'error');
-                          });
-                      });
+                    })
+                    .catch(function (error) {
+                        hideLoading();
+                        showFeedback('ไม่สามารถเข้าถึงกล้องได้: ' + error.message, 'error');
+                    });
+            });
+            // ตรวจสอบว่ามีการล็อกอินหรือไม่
+            checkAuthentication();
 
-                        // เริ่มการสแกน
-                        document.getElementById('startScanBtn').addEventListener('click', function () {
-                        // ตรวจสอบว่าได้เลือกกิจกรรมหรือไม่
-                        selectedEventId = document.getElementById('eventSelect').value;
-                        if (!selectedEventId) {
-                            showFeedback('กรุณาเลือกกิจกรรม/รายวิชาก่อนเริ่มการสแกน', 'warning');
-                            return;
+            // โหลดรายการกิจกรรม/รายวิชา
+            loadEvents();
+
+            // กำหนดตัวแปรสำหรับเก็บค่า instance ของ scanner
+            let html5QrCodeScanner = null;
+            let selectedEventId = null;
+            let cameraId = null;
+
+            // เริ่มการสแกน
+            document.getElementById('startScanBtn').addEventListener('click', function () {
+                // ตรวจสอบว่าได้เลือกกิจกรรมหรือไม่
+                selectedEventId = document.getElementById('eventSelect').value;
+                if (!selectedEventId) {
+                    showFeedback('กรุณาเลือกกิจกรรม/รายวิชาก่อนเริ่มการสแกน', 'warning');
+                    return;
+                }
+
+                startScanner();
+                document.getElementById('startScanBtn').classList.add('d-none');
+                document.getElementById('stopScanBtn').classList.remove('d-none');
+
+                // โหลดรายชื่อผู้เข้าร่วมสำหรับกิจกรรมที่เลือก
+                loadAttendanceList(selectedEventId);
+            });
+
+            // หยุดการสแกน
+            document.getElementById('stopScanBtn').addEventListener('click', function () {
+                stopScanner();
+                document.getElementById('stopScanBtn').classList.add('d-none');
+                document.getElementById('startScanBtn').classList.remove('d-none');
+            });
+
+            // สลับกล้อง
+            document.getElementById('switchCameraBtn').addEventListener('click', function () {
+                if (html5QrCodeScanner) {
+                    stopScanner();
+
+                    // เปลี่ยนกล้องในครั้งถัดไป
+                    Html5Qrcode.getCameras().then(cameras => {
+                        if (cameras && cameras.length) {
+                            let currentCameraIndex = cameras.findIndex(camera => camera.id === cameraId);
+                            let nextCameraIndex = (currentCameraIndex + 1) % cameras.length;
+                            cameraId = cameras[nextCameraIndex].id;
+
+                            if (document.getElementById('stopScanBtn').classList.contains('d-none')) {
+                                // ถ้า scanner ถูกหยุดอยู่ ให้เริ่มใหม่ด้วยกล้องใหม่
+                                document.getElementById('startScanBtn').click();
+                            } else {
+                                // ถ้า scanner กำลังทำงานอยู่ ให้รีสตาร์ทด้วยกล้องใหม่
+                                startScanner();
+                            }
                         }
-
-                            startScanner();
-                            document.getElementById('startScanBtn').classList.add('d-none');
-                            document.getElementById('stopScanBtn').classList.remove('d-none');
-
-                            // โหลดรายชื่อผู้เข้าร่วมสำหรับกิจกรรมที่เลือก
-                            loadAttendanceList(selectedEventId);
-                        });
-
-                      // หยุดการสแกน
-                      document.getElementById('stopScanBtn').addEventListener('click', function () {
-                          stopScanner();
-                          document.getElementById('stopScanBtn').classList.add('d-none');
-                          document.getElementById('startScanBtn').classList.remove('d-none');
-                      }); 
-
-                      // สลับกล้อง
-                      document.getElementById('switchCameraBtn').addEventListener('click', function () {
-                          if (html5QrCodeScanner) {
-                              stopScanner();
-
-                          // เปลี่ยนกล้องในครั้งถัดไป
-                          Html5Qrcode.getCameras().then(cameras => {
-                              if (cameras && cameras.length) {
-                                  let currentCameraIndex = cameras.findIndex(camera => camera.id === cameraId);
-                                  let nextCameraIndex = (currentCameraIndex + 1) % cameras.length;
-                                  cameraId = cameras[nextCameraIndex].id;
-
-                                  if (document.getElementById('stopScanBtn').classList.contains('d-none')) {
-                                      // ถ้า scanner ถูกหยุดอยู่ ให้เริ่มใหม่ด้วยกล้องใหม่
-                                      document.getElementById('startScanBtn').click();
-                                  } else {
-                                      // ถ้า scanner กำลังทำงานอยู่ ให้รีสตาร์ทด้วยกล้องใหม่
-                                      startScanner();
-                                  }
-                              }
                     }).catch(err => {
                         console.error('Error getting cameras:', err);
                         showFeedback('ไม่สามารถเข้าถึงกล้องได้', 'error');
                     });
                 }
-                });
+            });
 
-                // เมื่อเลือกกิจกรรม/รายวิชาใหม่
-                document.getElementById('eventSelect').addEventListener('change', function () {
+            // เมื่อเลือกกิจกรรม/รายวิชาใหม่
+            document.getElementById('eventSelect').addEventListener('change', function () {
                 selectedEventId = this.value;
                 if (selectedEventId) {
                     loadAttendanceList(selectedEventId);
@@ -651,10 +631,10 @@
                     `;
                     updateAttendanceCounts(0, 0, 0);
                 }
-               });
+            });
 
-                // ค้นหารายชื่อ
-                document.getElementById('searchInput').addEventListener('input', function () {
+            // ค้นหารายชื่อ
+            document.getElementById('searchInput').addEventListener('input', function () {
                 const searchText = this.value.toLowerCase();
                 const listItems = document.querySelectorAll('#attendanceList li');
 
@@ -666,11 +646,11 @@
                         item.style.display = 'none';
                     }
                 });
-               });
+            });
 
-                // บันทึกด้วยตนเอง
-                document.getElementById('manualForm').addEventListener('submit', function (e) {
-                    e.preventDefault();
+            // บันทึกด้วยตนเอง
+            document.getElementById('manualForm').addEventListener('submit', function (e) {
+                e.preventDefault();
 
                 // ตรวจสอบว่าได้เลือกกิจกรรมหรือไม่
                 selectedEventId = document.getElementById('eventSelect').value;
@@ -723,15 +703,17 @@
                         console.error('Error submitting manual attendance:', error);
                         showFeedback('เกิดข้อผิดพลาดในการติดต่อกับเซิร์ฟเวอร์', 'error');
                     });
-                });
+            });
 
-                // ออกจากระบบ
-                document.getElementById('logoutBtn').addEventListener('click', function (e) {
-                    e.preventDefault();
-                    logout();
-                });
+            // ออกจากระบบ
+            document.getElementById('logoutBtn').addEventListener('click', function (e) {
+                e.preventDefault();
+                logout();
+            });
 
-              
+            // ฟังก์ชันเริ่ม scanner
+            // ฟังก์ชันเริ่ม scanner
+            function startScanner() {
                 // เพิ่มตรงนี้: ตรวจสอบ HTTPS
                 if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
                     showFeedback('การเข้าถึงกล้องต้องใช้งานผ่าน HTTPS เท่านั้น', 'warning');
@@ -831,26 +813,26 @@
                                         const alertElement = document.createElement('div');
                                         alertElement.className = 'alert alert-primary mt-3 mb-3';
                                         alertElement.innerHTML = `
-                                <i class="fas fa-info-circle me-2"></i>
-                                <strong>คำแนะนำ:</strong> คุณสามารถใช้การบันทึกด้วยตนเองได้หากการเข้าถึงกล้องมีปัญหา
-                            `;
+                                                <i class="fas fa-info-circle me-2"></i>
+                                                <strong>คำแนะนำ:</strong> คุณสามารถใช้การบันทึกด้วยตนเองได้หากการเข้าถึงกล้องมีปัญหา
+                                            `;
 
-                                                            // แทรกข้อความแนะนำเหนือฟอร์ม
-                                                            manualFormCard.querySelector('.card-body').prepend(alertElement);
-                                                        }
+                                                                            // แทรกข้อความแนะนำเหนือฟอร์ม
+                                                                            manualFormCard.querySelector('.card-body').prepend(alertElement);
+                                                                        }
 
-                                                        // แสดงคำแนะนำเพิ่มเติมในกรณีที่พบปัญหา
-                                                        const infoElement = document.createElement('div');
-                                                        infoElement.className = 'alert alert-info mt-3';
-                                                        infoElement.innerHTML = `
-                            <h5>คำแนะนำเพิ่มเติม</h5>
-                            <ul>
-                                <li>ตรวจสอบว่าอุปกรณ์ของคุณมีกล้อง</li>
-                                <li>ตรวจสอบว่าไม่มีแอปพลิเคชันอื่นกำลังใช้งานกล้องอยู่</li>
-                                <li>ตรวจสอบการตั้งค่าสิทธิ์ในการเข้าถึงกล้องของเบราว์เซอร์</li>
-                                <li>ลองรีเฟรชหน้าเว็บและลองอีกครั้ง</li>
-                            </ul>
-                        `;
+                                                                        // แสดงคำแนะนำเพิ่มเติมในกรณีที่พบปัญหา
+                                                                        const infoElement = document.createElement('div');
+                                                                        infoElement.className = 'alert alert-info mt-3';
+                                                                        infoElement.innerHTML = `
+                                            <h5>คำแนะนำเพิ่มเติม</h5>
+                                            <ul>
+                                                <li>ตรวจสอบว่าอุปกรณ์ของคุณมีกล้อง</li>
+                                                <li>ตรวจสอบว่าไม่มีแอปพลิเคชันอื่นกำลังใช้งานกล้องอยู่</li>
+                                                <li>ตรวจสอบการตั้งค่าสิทธิ์ในการเข้าถึงกล้องของเบราว์เซอร์</li>
+                                                <li>ลองรีเฟรชหน้าเว็บและลองอีกครั้ง</li>
+                                            </ul>
+                                        `;
 
                                     // ลบคำแนะนำเก่าออกก่อน (ถ้ามี)
                                     const oldInfo = document.querySelector('.alert.alert-info');
@@ -869,10 +851,10 @@
                             const infoElement = document.createElement('div');
                             infoElement.className = 'alert alert-warning mt-3';
                             infoElement.innerHTML = `
-                <h5>ไม่พบกล้อง</h5>
-                <p>อุปกรณ์นี้อาจไม่มีกล้อง หรือไม่อนุญาตให้เว็บไซต์เข้าถึงกล้อง</p>
-                <p>คุณสามารถใช้การบันทึกด้วยตนเองได้ในส่วนด้านล่าง</p>
-            `;
+                                <h5>ไม่พบกล้อง</h5>
+                                <p>อุปกรณ์นี้อาจไม่มีกล้อง หรือไม่อนุญาตให้เว็บไซต์เข้าถึงกล้อง</p>
+                                <p>คุณสามารถใช้การบันทึกด้วยตนเองได้ในส่วนด้านล่าง</p>
+                            `;
 
                             // ลบคำแนะนำเก่าออกก่อน (ถ้ามี)
                             const oldInfo = document.querySelector('.alert.alert-warning, .alert.alert-info');
@@ -882,11 +864,11 @@
                             const cardBody = document.querySelector('.scanner-container').parentNode;
                             cardBody.appendChild(infoElement);
                         }
-                    }).catch(err => {
-                        console.error('Error getting cameras:', err);
-                        showFeedback('ไม่สามารถเข้าถึงกล้องได้: ' + err.message, 'error');
-                    });
-            }
+                            }).catch(err => {
+                                console.error('Error getting cameras:', err);
+                                showFeedback('ไม่สามารถเข้าถึงกล้องได้: ' + err.message, 'error');
+                            });
+                }
 
             // ฟังก์ชันหยุด scanner
             function stopScanner() {
@@ -926,23 +908,23 @@
 
             // ฟังก์ชันสำหรับประมวลผล QR Code
             function processQRCode(qrData) {
-          console.log("QR Code decoded successfully3:", qrData);
-          
-          try {
-              // ส่งข้อมูล QR code ทั้งหมดไปประมวลผลที่ server โดยตรง
-              // ไม่ต้องถอดรหัสที่ฝั่ง client
-              fetch('/api/process-qrcode', {
-                  method: 'POST',
-                  headers: {
-                      'Content-Type': 'application/json'
-                  },
-                  body: JSON.stringify({
-                      qrData: qrData,  // ส่ง QR data ที่เข้ารหัสไปยัง server โดยตรง
-                      eventId: selectedEventId
-                  })
-              })
-        .then(response => response.json())
-        .then(data => {
+            console.log("QR Code decoded successfully3:", qrData);
+            
+            try {
+                // ส่งข้อมูล QR code ทั้งหมดไปประมวลผลที่ server โดยตรง
+                // ไม่ต้องถอดรหัสที่ฝั่ง client
+                fetch('/api/process-qrcode', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        qrData: qrData,  // ส่ง QR data ที่เข้ารหัสไปยัง server โดยตรง
+                        eventId: selectedEventId
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
             // ซ่อน overlay
             document.getElementById('scanner-overlay').classList.add('d-none');
 
@@ -962,7 +944,7 @@
                 // แสดงข้อความแจ้งเตือนข้อผิดพลาด
                 showFeedback(data.message, 'error');
             }
-        })
+            })
                     .catch(error => {
                         // ซ่อน overlay
                         document.getElementById('scanner-overlay').classList.add('d-none');
@@ -974,7 +956,7 @@
                     console.error("Error processing QR code:", error);
                     document.getElementById('scanner-overlay').classList.add('d-none');
                     showFeedback('เกิดข้อผิดพลาดในการประมวลผล QR Code: ' + error.message, 'error');
-                }
+                }                                               
             }
 
 
@@ -1165,7 +1147,7 @@
                     toast.classList.add('text-dark');
                 }
 
-                toast.innerHTML = `
+                            toast.innerHTML = `
                     <div class="d-flex">
                         <div class="toast-body">
                             ${message}
@@ -1199,9 +1181,9 @@
                 document.getElementById('loadingOverlay').style.display = 'none';
             }
 
-            // ฟังก์ชันตรวจสอบสถานะการล็อกอิน
-            function checkAuthentication() {
-                showLoading();
+             // ฟังก์ชันตรวจสอบสถานะการล็อกอิน
+             function checkAuthentication() {
+             showLoading();
 
                 fetch('/api/login', {
                     method: 'GET',
@@ -1252,8 +1234,6 @@
                     });
             }
         });
-
-    
     </script>
 </body>
 
