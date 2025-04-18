@@ -770,6 +770,7 @@ function unscrambleString(str) {
                             )
                                 .then(() => {
                                     showFeedback('เริ่มการสแกนสำเร็จ', 'success');
+                                    console.log("773 onQRCodeSuccess: ", onQRCodeSuccess);
                                 })
                                 .catch(err => {
                                     console.error('Error starting scanner:', err);
@@ -894,10 +895,11 @@ function unscrambleString(str) {
                 // แสดง overlay และ loading
                 document.getElementById('scanner-overlay').classList.remove('d-none');
 
-                 console.log("QR Code decoded successfully2:", decodedText);
+                 console.log("897-QR Code decoded successfully1:", decodedText);
+                
                 // ประมวลผล QR Code
                 processQRCode(decodedText);
-                  console.log("QR Code decoded successfully2:", decodedText);
+                  console.log("901-QR Code decoded successfully2:", decodedText);
                 
             }
 
