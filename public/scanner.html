@@ -908,95 +908,56 @@ function unscrambleString(str) {
 
             // ฟังก์ชันสำหรับประมวลผล QR Code
             function processQRCode(qrData) {
-                // ถอดรหัสข้อมูล QR
-                console.log("QR Code decoded successfully3:",qrData);
-                let studentInfo;
-                const secretKey = CONFIG.ENCRYPTION_SECRET; // ต้องตรงกับใน student-card.html
-                console.log("ใช้ Secret Key (3 ตัวแรก):", process.env.ENCRYPTION_SECRET.substring(0, 3));
-                console.log("สถานะการโหลด .env:", process.env.ENCRYPTION_SECRET ? "โหลดสำเร็จ" : "ไม่พบค่า");
+    console.log("QR Code decoded successfully3:", qrData);
+    
+    try {
+        // ส่งข้อมูล QR code ทั้งหมดไปประมวลผลที่ server โดยตรง
+        // ไม่ต้องถอดรหัสที่ฝั่ง client
+        fetch('/api/process-qrcode', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                qrData: qrData,  // ส่ง QR data ที่เข้ารหัสไปยัง server โดยตรง
+                eventId: selectedEventId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            // ซ่อน overlay
+            document.getElementById('scanner-overlay').classList.add('d-none');
 
-                try {
-                    // พยายามถอดรหัสแบบใหม่ (เวอร์ชัน 2.0)
-                    const decryptedData = decryptQRData(qrData, secretKey);
+            if (data.success) {
+                // แสดงข้อมูลนักศึกษา
+                displayStudentInfo(data.studentInfo, data.isCheckOut);
 
-                    if (decryptedData) {
-                        // ตรวจสอบเวลาหมดอายุ
-                        const now = new Date().getTime();
-                        if (decryptedData.exp < now) {
-                            showFeedback("QR Code หมดอายุแล้ว กรุณาสร้าง QR Code ใหม่", "warning");
-                            return;
-                        }
+                // แสดงข้อความแจ้งเตือน
+                showFeedback(data.message, 'success');
 
-                        // สร้างข้อมูลนักศึกษาจากข้อมูลที่ถอดรหัสได้
-                        studentInfo = {
-                            studentId: decryptedData.sid,
-                            name: decryptedData.name,
-                            faculty: decryptedData.fac,
-                            department: decryptedData.dep
-                        };
-                    } else {
-                        // ถ้าถอดรหัสไม่ได้ ให้ตรวจสอบว่าเป็นรูปแบบเก่าหรือไม่
-                        if (qrData.startsWith('STUDENT:')) {
-                            // รูปแบบเก่า: "STUDENT:123456,TIME:1234567890,EXP:1234567899"
-                            const parts = qrData.split(',');
-                            const studentId = parts[0].split(':')[1];
+                // โหลดรายชื่อใหม่
+                loadAttendanceList(selectedEventId);
+            } else {
+                // ซ่อนข้อมูลนักศึกษา
+                document.getElementById('studentInfo').style.display = 'none';
 
-                            studentInfo = {
-                                studentId: studentId
-                            };
-                        } else {
-                            showFeedback("รูปแบบ QR Code ไม่ถูกต้อง", "error");
-                            return;
-                        }
-                    }
-                } catch (error) {
-                    console.error("Error decrypting QR code:", error);
-                    showFeedback("ไม่สามารถถอดรหัส QR Code ได้", "error");
-                    return;
-                }
-
-                // ส่งข้อมูลไปยัง API
-                fetch('/api/process-qrcode', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        qrData: studentInfo.studentId, // ส่งเฉพาะรหัสนักศึกษาไปยัง API
-                        eventId: selectedEventId,
-                        studentInfo: studentInfo // ส่งข้อมูลทั้งหมดที่ถอดรหัสได้
-                    })
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        // ซ่อน overlay
-                        document.getElementById('scanner-overlay').classList.add('d-none');
-
-                        if (data.success) {
-                            // แสดงข้อมูลนักศึกษา
-                            displayStudentInfo(data.studentInfo || studentInfo, data.isCheckOut);
-
-                            // แสดงข้อความแจ้งเตือน
-                            showFeedback(data.message, 'success');
-
-                            // โหลดรายชื่อใหม่
-                            loadAttendanceList(selectedEventId);
-                        } else {
-                            // ซ่อนข้อมูลนักศึกษา
-                            document.getElementById('studentInfo').style.display = 'none';
-
-                            // แสดงข้อความแจ้งเตือนข้อผิดพลาด
-                            showFeedback(data.message, 'error');
-                        }
-                    })
-                    .catch(error => {
-                        // ซ่อน overlay
-                        document.getElementById('scanner-overlay').classList.add('d-none');
-
-                        console.error('Error processing QR code:', error);
-                        showFeedback('เกิดข้อผิดพลาดในการประมวลผล QR Code', 'error');
-                    });
+                // แสดงข้อความแจ้งเตือนข้อผิดพลาด
+                showFeedback(data.message, 'error');
             }
+        })
+        .catch(error => {
+            // ซ่อน overlay
+            document.getElementById('scanner-overlay').classList.add('d-none');
+
+            console.error('Error processing QR code:', error);
+            showFeedback('เกิดข้อผิดพลาดในการประมวลผล QR Code', 'error');
+        });
+    } catch (error) {
+        console.error("Error processing QR code:", error);
+        document.getElementById('scanner-overlay').classList.add('d-none');
+        showFeedback('เกิดข้อผิดพลาดในการประมวลผล QR Code: ' + error.message, 'error');
+    }
+}
 
 
             // ฟังก์ชันสำหรับแสดงข้อมูลนักศึกษา
