@@ -909,6 +909,7 @@ function unscrambleString(str) {
             // ฟังก์ชันสำหรับประมวลผล QR Code
             function processQRCode(qrData) {
                 // ถอดรหัสข้อมูล QR
+                console.log("QR Code decoded successfully3:",qrData);
                 let studentInfo;
                 const secretKey = CONFIG.ENCRYPTION_SECRET; // ต้องตรงกับใน student-card.html
                 console.log("ใช้ Secret Key (3 ตัวแรก):", process.env.ENCRYPTION_SECRET.substring(0, 3));
