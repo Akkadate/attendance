@@ -98,7 +98,7 @@ const EncryptionModule = {
                 
                 // แปลงเป็น string และ parse เป็น JSON
                 const decryptedObj = JSON.parse(decrypted.toString(CryptoJS.enc.Utf8));
-                
+                console.log("ถอดแล้ว", decryptedObj)
                 // แปลงชื่อฟิลด์ให้ตรงกับที่ระบบคาดหวัง
                 return {
                     sid: decryptedObj.s || decryptedObj.sid,
@@ -128,7 +128,7 @@ const EncryptionModule = {
                     
                     // แปลงเป็น JavaScript object
                     const decryptedObj = JSON.parse(result);
-                    
+                    console.log("ถอดแล้ว2",decryptedObj)
                     // แปลงชื่อฟิลด์ให้ตรงกับที่ระบบคาดหวัง
                     return {
                         sid: decryptedObj.s || decryptedObj.sid,
