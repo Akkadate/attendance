@@ -832,9 +832,9 @@
                     return eventName.length > 20 ? eventName.substring(0, 17) + '...' : eventName;
                 });
                 
-                const presentData = data.map(item => item.present_count || 0);
-                const lateData = data.map(item => item.late_count || 0);
-                const absentData = data.map(item => (item.absent_count || 0) + (item.excused_count || 0));
+                const presentData = data.map(item => Number(item.present_count || 0));
+                const lateData = data.map(item => Number(item.late_count || 0));
+                const absentData = data.map(item => Number(item.absent_count || 0) + Number(item.excused_count || 0));
                 
                 const eventChartCtx = document.getElementById('eventChart').getContext('2d');
                 charts.eventChart = new Chart(eventChartCtx, {
