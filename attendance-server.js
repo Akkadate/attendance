@@ -131,6 +131,7 @@ const EncryptionModule = {
                     
                     // แปลงเป็น JavaScript object
                     const decryptedObj = JSON.parse(result);
+                  
                     console.log("132-ถอดแล้ว2",decryptedObj);
                   
                     // แปลงชื่อฟิลด์ให้ตรงกับที่ระบบคาดหวัง
@@ -419,9 +420,12 @@ app.post("/api/process-qrcode", requireAuth, async (req, res) => {
           exp: Date.now() + 300000, // default 5 minutes expiry
         };
       } else {
+        
         // ถอดรหัสที่ server
+        console.log("425-ข้อมูล QR",qrData)
         decodedData = EncryptionModule.decrypt(qrData);
-        console.log("ข้อมูลถอดรหัส",decodedData);
+        
+        console.log("426-ข้อมูลถอดรหัส",decodedData);
         
         // ถ้าถอดรหัสไม่สำเร็จ ให้ลองใช้วิธีการถอดรหัสแบบง่าย
         if (!decodedData) {
