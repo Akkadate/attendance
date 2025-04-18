@@ -1197,7 +1197,13 @@
                     })
                     .then(data => {
                     hideLoading();
-                    
+
+                    // แสดงข้อมูลที่ได้รับจาก API
+                    console.log("Student API response:", data);
+                    console.log("Student info:", data.student);
+                    console.log("Attendance records:", data.attendance);
+
+                        
                     if (data.success) {
                         const student = data.student;
                         studentAttendance = data.attendance;
