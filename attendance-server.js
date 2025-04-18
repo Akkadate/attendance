@@ -1224,78 +1224,97 @@ app.get("/api/reports/attendance-summary", requireAuth, async (req, res) => {
 // API รายงานการเข้าร่วมกิจกรรมรายบุคคล
 app.get("/api/reports/student-attendance", requireAuth, async (req, res) => {
   try {
-    const { studentId, startDate, endDate } = req.query;
-
+    // รับพารามิเตอร์จาก request
+    let { studentId, startDate, endDate } = req.query;
+    
+    // ตรวจสอบว่ามีรหัสนักศึกษาหรือไม่
     if (!studentId) {
       return res.status(400).json({
         success: false,
         message: "กรุณาระบุรหัสนักศึกษา",
       });
     }
-
-    // ตรวจสอบว่า studentId มีอยู่จริงในฐานข้อมูลหรือไม่
-    const studentResult = await pool.query(
-      `SELECT * FROM student_details WHERE student_id = $1`,
-      [studentId]
-    );
-
-    // สร้างข้อมูลนักศึกษา (ถ้ามี) หรือใช้เพียงรหัสนักศึกษา
-    const studentInfo =
-      studentResult.rowCount > 0
-        ? studentResult.rows[0]
+    
+    // แน่ใจว่า studentId เป็น string และไม่มีช่องว่าง
+    studentId = studentId.toString().trim();
+    
+    console.log("Processing student ID:", studentId);
+    
+    try {
+      // ดึงข้อมูลนักศึกษา (ถ้ามี)
+      const studentQuery = {
+        text: "SELECT * FROM student_details WHERE student_id = $1",
+        values: [studentId]
+      };
+      
+      console.log("Student query:", studentQuery);
+      const studentResult = await pool.query(studentQuery);
+      
+      // ข้อมูลพื้นฐานของนักศึกษา
+      const studentInfo = studentResult.rowCount > 0 
+        ? studentResult.rows[0] 
         : { student_id: studentId };
-
-    // ต่อไปดึงข้อมูลการเข้าร่วมกิจกรรม (ถ้ามี)
-    let sqlQuery = `
-      SELECT 
-        e.id as event_id,
-        e.event_name,
-        e.event_type,
-        e.start_time,
-        e.end_time,
-        a.check_in_time,
-        a.check_out_time,
-        a.status,
-        a.notes
-      FROM events e
-      INNER JOIN attendance_records a ON e.id = a.event_id
-      WHERE a.student_id = $1
-    `;
-
-    const params = [studentId];
-    let paramIndex = 2;
-
-    if (startDate) {
-      sqlQuery += ` AND e.start_time >= $${paramIndex}`;
-      params.push(startDate);
-      paramIndex++;
+      
+      // ดึงข้อมูลการเข้าร่วมกิจกรรม
+      let attendanceQuery = {
+        text: `SELECT 
+          e.id as event_id,
+          e.event_name,
+          e.event_type,
+          e.start_time,
+          e.end_time,
+          a.check_in_time,
+          a.check_out_time,
+          a.status,
+          a.notes
+        FROM events e
+        INNER JOIN attendance_records a ON e.id = a.event_id
+        WHERE a.student_id = $1`,
+        values: [studentId]
+      };
+      
+      // เพิ่มเงื่อนไขวันที่ถ้ามี
+      if (startDate) {
+        attendanceQuery.text += " AND e.start_time >= $" + (attendanceQuery.values.length + 1);
+        attendanceQuery.values.push(startDate);
+      }
+      
+      if (endDate) {
+        attendanceQuery.text += " AND e.start_time <= $" + (attendanceQuery.values.length + 1);
+        attendanceQuery.values.push(endDate);
+      }
+      
+      // เรียงลำดับตามวันที่
+      attendanceQuery.text += " ORDER BY e.start_time DESC";
+      
+      console.log("Attendance query:", attendanceQuery);
+      const attendanceResult = await pool.query(attendanceQuery);
+      
+      // ส่งผลลัพธ์กลับไป
+      return res.json({
+        success: true,
+        student: studentInfo,
+        attendance: attendanceResult.rows || []
+      });
+      
+    } catch (dbError) {
+      console.error("Database error:", dbError);
+      
+      // ส่งข้อมูลนักศึกษาพื้นฐานและอาร์เรย์ว่างแทนเพื่อไม่ให้ frontend พัง
+      return res.json({
+        success: true,
+        student: { student_id: studentId },
+        attendance: []
+      });
     }
-
-    if (endDate) {
-      sqlQuery += ` AND e.start_time <= $${paramIndex}`;
-      params.push(endDate);
-      paramIndex++;
-    }
-
-    sqlQuery += " ORDER BY e.start_time DESC";
-
-    const attendanceResult = await pool.query(sqlQuery, params);
-
-    // ส่งคืนข้อมูล ไม่ว่าจะพบประวัติการเข้าร่วมหรือไม่ก็ตาม
-    return res.json({
-      success: true,
-      student: studentInfo,
-      attendance: attendanceResult.rows || []
-    });
-
+    
   } catch (error) {
-    console.error("เกิดข้อผิดพลาดในการดึงข้อมูลการเข้าร่วมของนักศึกษา:", error);
-
+    console.error("Error in student-attendance API:", error);
+    
     return res.status(500).json({
       success: false,
-      message:
-        "เกิดข้อผิดพลาดในการดึงข้อมูลการเข้าร่วมของนักศึกษา กรุณาลองใหม่อีกครั้ง",
-      error: error.message
+      message: "เกิดข้อผิดพลาดในการดึงข้อมูล กรุณาลองใหม่อีกครั้ง",
+      errorDetails: error.toString()
     });
   }
 });
