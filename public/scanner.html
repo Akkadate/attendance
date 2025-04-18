@@ -450,11 +450,13 @@ function decryptQRData(encryptedString, secretKey) {
     try {
         // ถอดรหัส Base64 ก่อน
         const base64Decoded = atob(encryptedString);
+        console.log("base64 Decoded =",base64Decoded);
         
         // ทดลองถอดรหัสแบบใหม่ (XOR + scramble)
         try {
             // ถอดการสลับตำแหน่งตัวอักษร (unscramble)
             const unscrambled = unscrambleString(base64Decoded);
+            console.log("unscrambled is =",unscrambled);
             
             // ถอดรหัส XOR
             let result = '';
