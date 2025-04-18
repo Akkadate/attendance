@@ -96,10 +96,11 @@ const EncryptionModule = {
                     iv: CryptoJS.enc.Utf8.parse(data.iv) 
                 });
 
-               console.log("99-ถอดแล้ว0", decrypted)
+                console.log("99-ถอดแล้ว0", decrypted);
+              
                 // แปลงเป็น string และ parse เป็น JSON
                 const decryptedObj = JSON.parse(decrypted.toString(CryptoJS.enc.Utf8));
-                console.log("101-ถอดแล้ว1", decryptedObj)
+                console.log("101-ถอดแล้ว1", decryptedObj);
               
                 // แปลงชื่อฟิลด์ให้ตรงกับที่ระบบคาดหวัง
                 return {
