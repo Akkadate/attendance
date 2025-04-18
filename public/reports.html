@@ -654,7 +654,7 @@
                 const studentId = document.getElementById('studentIdSearch').value.trim();
                 
                 // ตรวจสอบว่ารหัสนักศึกษามีรูปแบบที่ถูกต้อง (ตัวอย่างเช่น เป็นตัวเลข 8-13 หลัก)
-                const validStudentIdPattern = /^\d{8,13}$/;
+                const validStudentIdPattern = /^\d{3,13}$/;
                 
                 if (!studentId) {
                     showFeedback('กรุณาระบุรหัสนักศึกษา', 'warning');
