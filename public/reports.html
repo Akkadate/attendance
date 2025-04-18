@@ -770,7 +770,7 @@
                 });
             }
             
-            // ฟังก์ชันอัปเดตสถิติสรุป
+            // ฟังก์ชันอัปเดตสถิติสรุป (แก้ไข)
             function updateSummaryStats(data) {
                 let presentCount = 0;
                 let lateCount = 0;
@@ -778,10 +778,11 @@
                 let totalCount = 0;
                 
                 data.forEach(event => {
-                    presentCount += event.present_count || 0;
-                    lateCount += event.late_count || 0;
-                    absentCount += (event.absent_count || 0) + (event.excused_count || 0);
-                    totalCount += event.total_attendees || 0;
+                    // แปลงให้เป็นตัวเลขอย่างชัดเจน
+                    presentCount += Number(event.present_count || 0);
+                    lateCount += Number(event.late_count || 0);
+                    absentCount += Number(event.absent_count || 0) + Number(event.excused_count || 0);
+                    totalCount += Number(event.total_attendees || 0);
                 });
                 
                 document.getElementById('presentCount').textContent = presentCount;
@@ -789,7 +790,7 @@
                 document.getElementById('absentCount').textContent = absentCount;
                 document.getElementById('totalAttendance').textContent = totalCount;
             }
-            
+                        
             // ฟังก์ชันสร้างกราฟ
             function createCharts(data) {
                 // ลบกราฟเดิม (ถ้ามี)
