@@ -1073,7 +1073,7 @@
                         // อัปเดตสถิติการเข้าร่วม
                         const presentCount = Number(data.summary.present_count || 0);
                         const lateCount = Number(data.summary.late_count || 0);
-                        const absentCount = Number((data.summary.absent_count || 0) + (data.summary.excused_count || 0));
+                        const absentCount = Number(data.summary.absent_count || 0) + Number(data.summary.excused_count || 0);
                         const totalCount = Number(presentCount + lateCount + absentCount);
                         
                         document.getElementById('eventPresentCount').textContent = presentCount;
