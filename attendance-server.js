@@ -1256,23 +1256,22 @@ app.get("/api/reports/student-attendance", requireAuth, async (req, res) => {
         : { student_id: studentId };
       
       // ดึงข้อมูลการเข้าร่วมกิจกรรม
-      let attendanceQuery = {
-        text: `SELECT 
-          e.id as event_id,
-          e.event_name,
-          e.event_type,
-          e.start_time,
-          e.end_time,
-          a.check_in_time,
-          a.check_out_time,
-          a.status,
-          a.notes
-        FROM events e
-        INNER JOIN attendance_records a ON e.id = a.event_id
-        WHERE a.student_id = $1`,
-        values: [studentId]
-      };
-      
+        let attendanceQuery = {
+          text: `SELECT 
+            e.id as event_id,
+            e.event_name,
+            e.event_type,
+            e.start_time,
+            e.end_time,
+            a.check_in_time,
+            a.check_out_time,
+            a.status,
+            a.notes
+          FROM attendance_records a
+          LEFT JOIN events e ON e.id = a.event_id
+          WHERE a.student_id = $1`,
+          values: [studentId]
+        };
       // เพิ่มเงื่อนไขวันที่ถ้ามี
       if (startDate) {
         attendanceQuery.text += " AND e.start_time >= $" + (attendanceQuery.values.length + 1);
