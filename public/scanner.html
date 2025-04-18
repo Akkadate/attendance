@@ -448,11 +448,11 @@
         // แก้ไขฟังก์ชัน decryptQRData ในไฟล์ scanner.html
         function decryptQRData(encryptedString, secretKey) {
             try {
-        // ถอดรหัส Base64 ก่อน
+        // รหัส Base64 ก่อน
         const base64Decoded = atob(encryptedString);
         console.log("base64 Decoded =",base64Decoded);
         
-        // ทดลองถอดรหัสแบบใหม่ (XOR + scramble)
+        // ทดลองรหัสแบบใหม่ (XOR + scramble)
         try {
             // ถอดการสลับตำแหน่งตัวอักษร (unscramble)
             const unscrambled = unscrambleString(base64Decoded);
