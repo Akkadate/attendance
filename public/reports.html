@@ -886,9 +886,9 @@
                 let totalAbsent = 0;
                 
                 data.forEach(item => {
-                    totalPresent += item.present_count || 0;
-                    totalLate += item.late_count || 0;
-                    totalAbsent += (item.absent_count || 0) + (item.excused_count || 0);
+                    totalPresent += Number(item.present_count || 0);
+                    totalLate += Number(item.late_count || 0);
+                    totalAbsent += Number(item.absent_count || 0) + Number(item.excused_count || 0);
                 });
                 
                 const statusChartCtx = document.getElementById('statusChart').getContext('2d');
