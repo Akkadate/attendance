@@ -1,0 +1,1614 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>จัดการกิจกรรม - ระบบเช็คชื่อนักศึกษา</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts - Prompt -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <!-- Flatpickr - Date Time Picker -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: #f8f9fa;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .navbar-brand {
+            font-weight: 600;
+        }
+        .navbar {
+            background-color: #0a2463 !important;
+        }
+        .main-content {
+            flex: 1;
+            padding: 20px 0;
+        }
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .card-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            font-weight: 500;
+        }
+        .event-item {
+            border-left: 5px solid #0a2463;
+            transition: all 0.2s;
+        }
+        .event-item:hover {
+            background-color: #f8f9fa;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .event-item.completed {
+            border-left-color: #28a745;
+        }
+        .event-item.cancelled {
+            border-left-color: #dc3545;
+            opacity: 0.7;
+        }
+        .event-meta {
+            font-size: 14px;
+            color: #6c757d;
+        }
+        .badge-pill {
+            border-radius: 50px;
+            padding: 5px 10px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .badge-class {
+            background-color: #0a2463;
+            color: white;
+        }
+        .badge-activity {
+            background-color: #3f8efc;
+            color: white;
+        }
+        .badge-seminar {
+            background-color: #8e44ad;
+            color: white;
+        }
+        .badge-exam {
+            background-color: #e74c3c;
+            color: white;
+        }
+        .badge-other {
+            background-color: #7f8c8d;
+            color: white;
+        }
+        .btn-sm {
+            border-radius: 4px;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+        .filter-container {
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        .form-select, .form-control {
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .pagination {
+            margin-bottom: 0;
+        }
+        .page-item.active .page-link {
+            background-color: #0a2463;
+            border-color: #0a2463;
+        }
+        .page-link {
+            color: #0a2463;
+        }
+        .modal-content {
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        .modal-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .modal-footer {
+            background-color: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+        }
+        .feedback-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1050;
+            min-width: 300px;
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            display: none;
+        }
+        .spinner-container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        footer {
+            background-color: #f8f9fa;
+            padding: 10px 0;
+            text-align: center;
+            margin-top: auto;
+            font-size: 14px;
+            color: #6c757d;
+            border-top: 1px solid #e9ecef;
+        }
+        .flatpickr-input {
+            background-color: #fff !important;
+        }
+        #eventList {
+            min-height: 200px;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 30px 0;
+            color: #6c757d;
+        }
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+        .attendance-summary {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .summary-item {
+            display: flex;
+            align-items: center;
+            font-size: 13px;
+            color: #495057;
+        }
+        .summary-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        .summary-present .summary-dot {
+            background-color: #28a745;
+        }
+        .summary-late .summary-dot {
+            background-color: #ffc107;
+        }
+        .summary-absent .summary-dot {
+            background-color: #dc3545;
+        }
+        @media (max-width: 576px) {
+            .container {
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+            .card {
+                border-radius: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-qrcode me-2"></i>ระบบเช็คชื่อนักศึกษา
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/scan">
+                            <i class="fas fa-camera me-1"></i> สแกน QR Code
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/events">
+                            <i class="fas fa-calendar-alt me-1"></i> จัดการกิจกรรม
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/reports">
+                            <i class="fas fa-chart-bar me-1"></i> รายงาน
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="logoutBtn">
+                            <i class="fas fa-sign-out-alt me-1"></i> ออกจากระบบ
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">จัดการกิจกรรม/รายวิชา</h2>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createEventModal">
+                    <i class="fas fa-plus me-1"></i> สร้างกิจกรรมใหม่
+                </button>
+            </div>
+
+            <div class="filter-container">
+                <div class="row g-2">
+                    <div class="col-md-3">
+                        <select id="filterStatus" class="form-select">
+                            <option value="">สถานะทั้งหมด</option>
+                            <option value="active" selected>กำลังดำเนินการ</option>
+                            <option value="completed">เสร็จสิ้น</option>
+                            <option value="cancelled">ยกเลิก</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select id="filterType" class="form-select">
+                            <option value="">ประเภททั้งหมด</option>
+                            <option value="class">รายวิชา</option>
+                            <option value="activity">กิจกรรม</option>
+                            <option value="seminar">สัมมนา</option>
+                            <option value="exam">สอบ</option>
+                            <option value="other">อื่นๆ</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <input type="text" id="filterSearch" class="form-control" placeholder="ค้นหาชื่อกิจกรรม, สถานที่...">
+                    </div>
+                    <div class="col-md-2">
+                        <button id="applyFilterBtn" class="btn btn-primary w-100">
+                            <i class="fas fa-filter me-1"></i> กรอง
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-list-ul me-2"></i>รายการกิจกรรม/รายวิชา</span>
+                </div>
+                <div class="card-body p-0">
+                    <div id="eventList">
+                        <!-- รายการกิจกรรมจะถูกเพิ่มที่นี่ -->
+                        <div class="empty-state">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>กำลังโหลดข้อมูล...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex justify-content-between align-items-center">
+                    <div>
+                        แสดง <span id="eventCount">0</span> รายการ
+                    </div>
+                    <nav aria-label="Event navigation">
+                        <ul class="pagination pagination-sm" id="eventPagination">
+                            <!-- หน้าการแบ่งจะถูกเพิ่มที่นี่ -->
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Event Modal -->
+    <div class="modal fade" id="createEventModal" tabindex="-1" aria-labelledby="createEventModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createEventModalLabel">สร้างกิจกรรม/รายวิชาใหม่</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="createEventForm">
+                        <div class="row mb-3">
+                            <div class="col-md-8">
+                                <label for="eventName" class="form-label">ชื่อกิจกรรม/รายวิชา <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="eventName" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="eventType" class="form-label">ประเภท <span class="text-danger">*</span></label>
+                                <select class="form-select" id="eventType" required>
+                                    <option value="class">รายวิชา</option>
+                                    <option value="activity">กิจกรรม</option>
+                                    <option value="seminar">สัมมนา</option>
+                                    <option value="exam">สอบ</option>
+                                    <option value="other">อื่นๆ</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="startTime" class="form-label">เวลาเริ่มต้น <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="startTime" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="endTime" class="form-label">เวลาสิ้นสุด <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="endTime" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="location" class="form-label">สถานที่</label>
+                            <input type="text" class="form-control" id="location">
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label for="faculty" class="form-label">คณะ</label>
+                                <input type="text" class="form-control" id="faculty">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="department" class="form-label">สาขา</label>
+                                <input type="text" class="form-control" id="department">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="yearLevel" class="form-label">ชั้นปี</label>
+                                <input type="text" class="form-control" id="yearLevel">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">รายละเอียด</label>
+                            <textarea class="form-control" id="description" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                    <button type="button" class="btn btn-primary" id="saveEventBtn">บันทึก</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View/Edit Event Modal -->
+    <div class="modal fade" id="editEventModal" tabindex="-1" aria-labelledby="editEventModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editEventModalLabel">รายละเอียดกิจกรรม</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <ul class="nav nav-tabs mb-3" id="eventTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="info-tab" data-bs-toggle="tab" data-bs-target="#info-tab-pane" type="button" role="tab">ข้อมูลกิจกรรม</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="attendance-tab" data-bs-toggle="tab" data-bs-target="#attendance-tab-pane" type="button" role="tab">รายชื่อผู้เข้าร่วม</button>
+                        </li>
+                    </ul>
+                    <div class="tab-content" id="eventTabContent">
+                        <div class="tab-pane fade show active" id="info-tab-pane" role="tabpanel" aria-labelledby="info-tab" tabindex="0">
+                            <form id="editEventForm">
+                                <input type="hidden" id="editEventId">
+                                <div class="row mb-3">
+                                    <div class="col-md-8">
+                                        <label for="editEventName" class="form-label">ชื่อกิจกรรม/รายวิชา <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="editEventName" required>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="editEventType" class="form-label">ประเภท <span class="text-danger">*</span></label>
+                                        <select class="form-select" id="editEventType" required>
+                                            <option value="class">รายวิชา</option>
+                                            <option value="activity">กิจกรรม</option>
+                                            <option value="seminar">สัมมนา</option>
+                                            <option value="exam">สอบ</option>
+                                            <option value="other">อื่นๆ</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="editStartTime" class="form-label">เวลาเริ่มต้น <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="editStartTime" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="editEndTime" class="form-label">เวลาสิ้นสุด <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="editEndTime" required>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="editLocation" class="form-label">สถานที่</label>
+                                    <input type="text" class="form-control" id="editLocation">
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label for="editFaculty" class="form-label">คณะ</label>
+                                        <input type="text" class="form-control" id="editFaculty">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="editDepartment" class="form-label">สาขา</label>
+                                        <input type="text" class="form-control" id="editDepartment">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="editYearLevel" class="form-label">ชั้นปี</label>
+                                        <input type="text" class="form-control" id="editYearLevel">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="editDescription" class="form-label">รายละเอียด</label>
+                                    <textarea class="form-control" id="editDescription" rows="3"></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="editStatus" class="form-label">สถานะ</label>
+                                    <select class="form-select" id="editStatus">
+                                        <option value="active">กำลังดำเนินการ</option>
+                                        <option value="completed">เสร็จสิ้น</option>
+                                        <option value="cancelled">ยกเลิก</option>
+                                    </select>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="tab-pane fade" id="attendance-tab-pane" role="tabpanel" aria-labelledby="attendance-tab" tabindex="0">
+                            <div id="attendanceSummary" class="mb-3">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6>สรุปผู้เข้าร่วม</h6>
+                                        <div class="attendance-summary">
+                                            <div class="summary-item summary-present">
+                                                <div class="summary-dot"></div>
+                                                <div>มาเรียน: <span id="summaryPresent">0</span></div>
+                                            </div>
+                                            <div class="summary-item summary-late">
+                                                <div class="summary-dot"></div>
+                                                <div>มาสาย: <span id="summaryLate">0</span></div>
+                                            </div>
+                                            <div class="summary-item summary-absent">
+                                                <div class="summary-dot"></div>
+                                                <div>ขาด/ลา: <span id="summaryAbsent">0</span></div>
+                                            </div>
+                                            <div class="summary-item">
+                                                <div>รวม: <span id="summaryTotal">0</span></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 text-end">
+                                        <button class="btn btn-sm btn-outline-primary" id="exportAttendanceBtn">
+                                            <i class="fas fa-file-export me-1"></i> ส่งออกข้อมูล
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <input type="text" class="form-control form-control-sm" id="attendanceSearch" placeholder="ค้นหารหัสนักศึกษา, ชื่อ...">
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover table-sm">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>รหัสนักศึกษา</th>
+                                            <th>ชื่อ-นามสกุล</th>
+                                            <th>คณะ/สาขา</th>
+                                            <th>เวลาเข้า</th>
+                                            <th>สถานะ</th>
+                                            <th>จัดการ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="attendanceList">
+                                        <!-- รายชื่อผู้เข้าร่วมจะถูกเพิ่มที่นี่ -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div id="noAttendance" class="text-center p-3 d-none">
+                                <i class="fas fa-user-clock text-muted mb-2" style="font-size: 32px;"></i>
+                                <p class="text-muted mb-0">ยังไม่มีผู้เข้าร่วมกิจกรรมนี้</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ปิด</button>
+                    <button type="button" class="btn btn-primary" id="updateEventBtn">บันทึกการเปลี่ยนแปลง</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manual Attendance Modal -->
+    <div class="modal fade" id="addAttendanceModal" tabindex="-1" aria-labelledby="addAttendanceModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addAttendanceModalLabel">เพิ่มรายชื่อผู้เข้าร่วม</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addAttendanceForm">
+                        <input type="hidden" id="attendanceEventId">
+                        <div class="mb-3">
+                            <label for="attendanceStudentId" class="form-label">รหัสนักศึกษา <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="attendanceStudentId" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="attendanceStudentName" class="form-label">ชื่อ-นามสกุล</label>
+                            <input type="text" class="form-control" id="attendanceStudentName">
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="attendanceFaculty" class="form-label">คณะ</label>
+                                <input type="text" class="form-control" id="attendanceFaculty">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="attendanceDepartment" class="form-label">สาขา</label>
+                                <input type="text" class="form-control" id="attendanceDepartment">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="attendanceStatus" class="form-label">สถานะ <span class="text-danger">*</span></label>
+                            <select class="form-select" id="attendanceStatus" required>
+                                <option value="present">มาเรียน</option>
+                                <option value="late">มาสาย</option>
+                                <option value="absent">ขาดเรียน</option>
+                                <option value="excused">ลาป่วย/ลากิจ</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="attendanceNotes" class="form-label">บันทึกเพิ่มเติม</label>
+                            <textarea class="form-control" id="attendanceNotes" rows="2"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                    <button type="button" class="btn btn-primary" id="saveAttendanceBtn">บันทึก</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p class="mb-0">© 2025 ระบบเช็คชื่อนักศึกษาด้วย QR Code - มหาวิทยาลัยนอร์ทกรุงเทพ</p>
+        </div>
+    </footer>
+
+    <!-- Feedback Toast Container -->
+    <div class="feedback-container"></div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="spinner-container">
+            <div class="spinner-border text-primary mb-2" role="status"></div>
+            <div>กำลังประมวลผล...</div>
+        </div>
+    </div>
+
+    <!-- Bootstrap & Required JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Flatpickr - Date Time Picker -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/th.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // ตรวจสอบว่ามีการล็อกอินหรือไม่
+            checkAuthentication();
+            
+            // กำหนดตัวแปรสำหรับการจัดการข้อมูล
+            let allEvents = [];
+            let filteredEvents = [];
+            let currentPage = 1;
+            const eventsPerPage = 10;
+            
+            // กำหนดค่า Flatpickr สำหรับเลือกวันเวลา
+            flatpickr("#startTime", {
+                enableTime: true,
+                dateFormat: "Y-m-d H:i",
+                time_24hr: true,
+                locale: "th",
+                minDate: "today"
+            });
+            
+            flatpickr("#endTime", {
+                enableTime: true,
+                dateFormat: "Y-m-d H:i",
+                time_24hr: true,
+                locale: "th",
+                minDate: "today"
+            });
+            
+            flatpickr("#editStartTime", {
+                enableTime: true,
+                dateFormat: "Y-m-d H:i",
+                time_24hr: true,
+                locale: "th"
+            });
+            
+            flatpickr("#editEndTime", {
+                enableTime: true,
+                dateFormat: "Y-m-d H:i",
+                time_24hr: true,
+                locale: "th"
+            });
+            
+            // โหลดรายการกิจกรรม
+            loadEvents();
+            
+            // กำหนด Event Listeners
+            document.getElementById('applyFilterBtn').addEventListener('click', function() {
+                filterEvents();
+            });
+            
+            document.getElementById('saveEventBtn').addEventListener('click', function() {
+                createEvent();
+            });
+            
+            document.getElementById('updateEventBtn').addEventListener('click', function() {
+                updateEvent();
+            });
+            
+            document.getElementById('saveAttendanceBtn').addEventListener('click', function() {
+                addAttendance();
+            });
+            
+            document.getElementById('exportAttendanceBtn').addEventListener('click', function() {
+                exportAttendance();
+            });
+            
+            // ค้นหารายชื่อผู้เข้าร่วม
+            document.getElementById('attendanceSearch').addEventListener('input', function() {
+                const searchText = this.value.toLowerCase();
+                const listItems = document.querySelectorAll('#attendanceList tr');
+                
+                listItems.forEach(item => {
+                    const text = item.textContent.toLowerCase();
+                    if (text.includes(searchText)) {
+                        item.style.display = '';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+            
+            // เมื่อคลิกที่แท็บรายชื่อผู้เข้าร่วม
+            document.getElementById('attendance-tab').addEventListener('click', function() {
+                const eventId = document.getElementById('editEventId').value;
+                if (eventId) {
+                    loadAttendanceList(eventId);
+                }
+            });
+            
+            // ออกจากระบบ
+            document.getElementById('logoutBtn').addEventListener('click', function(e) {
+                e.preventDefault();
+                logout();
+            });
+            
+            // ฟังก์ชันโหลดรายการกิจกรรม
+            function loadEvents() {
+                showLoading();
+                
+                // ดึงค่าจากตัวเลือกการกรอง (ปัญหาอยู่ตรงนี้)
+                const status = document.getElementById('filterStatus').value;
+                const type = document.getElementById('filterType').value;
+                const search = document.getElementById('filterSearch').value;
+                
+                let url = '/api/events';
+                const params = [];
+                
+                if (status) params.push(`status=${status}`);
+                if (type) params.push(`type=${type}`);
+                if (search) params.push(`search=${encodeURIComponent(search)}`);
+                
+                if (params.length > 0) {
+                    url += '?' + params.join('&');
+                }
+                
+                fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    
+                    if (data.success) {
+                        allEvents = data.events;
+                        filteredEvents = [...allEvents]; // ตั้งค่า filteredEvents เป็นข้อมูลที่กรองมาแล้วจาก API
+                        displayEvents();
+                    } else {
+                        showFeedback('ไม่สามารถโหลดรายการกิจกรรมได้', 'error');
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    console.error('Error loading events:', error);
+                    showFeedback('เกิดข้อผิดพลาดในการโหลดรายการกิจกรรม', 'error');
+                });
+            }
+            
+            // ฟังก์ชันสำหรับกรองกิจกรรม
+            function filterEvents() {
+                loadEvents();
+                const status = document.getElementById('filterStatus').value;
+                const type = document.getElementById('filterType').value;
+                const search = document.getElementById('filterSearch').value.toLowerCase();
+                
+                filteredEvents = allEvents.filter(event => {
+                    // กรองตามสถานะ
+                    if (status && event.status !== status) {
+                        return false;
+                    }
+                    
+                    // กรองตามประเภท
+                    if (type && event.event_type !== type) {
+                        return false;
+                    }
+                    
+                    // กรองตามคำค้นหา
+                    if (search) {
+                        const eventName = (event.event_name || '').toLowerCase();
+                        const location = (event.location || '').toLowerCase();
+                        const description = (event.description || '').toLowerCase();
+                        
+                        return eventName.includes(search) || 
+                               location.includes(search) || 
+                               description.includes(search);
+                    }
+                    
+                    return true;
+                });
+                
+                // รีเซ็ตหน้าเป็นหน้าแรก
+                currentPage = 1;
+                
+                // แสดงผลลัพธ์
+                displayEvents();
+            }
+            
+            // ฟังก์ชันสำหรับแสดงรายการกิจกรรม
+            function displayEvents() {
+                const eventList = document.getElementById('eventList');
+                
+                // ถ้าไม่มีกิจกรรม
+                if (filteredEvents.length === 0) {
+                    eventList.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-calendar-xmark"></i>
+                            <p>ไม่พบกิจกรรมที่ตรงกับเงื่อนไขการค้นหา</p>
+                        </div>
+                    `;
+                    
+                    document.getElementById('eventCount').textContent = '0';
+                    document.getElementById('eventPagination').innerHTML = '';
+                    return;
+                }
+                
+                // คำนวณจำนวนหน้าทั้งหมด
+                const totalPages = Math.ceil(filteredEvents.length / eventsPerPage);
+                
+                // ตรวจสอบว่าหน้าปัจจุบันไม่เกินจำนวนหน้าทั้งหมด
+                if (currentPage > totalPages) {
+                    currentPage = totalPages;
+                }
+                
+                // คำนวณดัชนีเริ่มต้นและสิ้นสุดของรายการที่จะแสดง
+                const startIndex = (currentPage - 1) * eventsPerPage;
+                const endIndex = Math.min(startIndex + eventsPerPage, filteredEvents.length);
+                
+                // แสดงกิจกรรมในหน้าปัจจุบัน
+                const eventsToShow = filteredEvents.slice(startIndex, endIndex);
+                
+                // สร้าง HTML สำหรับแสดงกิจกรรม
+                eventList.innerHTML = '';
+                
+                eventsToShow.forEach(event => {
+                    // แปลงวันที่
+                    const startDate = new Date(event.start_time);
+                    const endDate = new Date(event.end_time);
+                    
+                    // จัดรูปแบบวันที่
+                    const formattedStartDate = startDate.toLocaleDateString('th-TH', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
+                    });
+                    
+                    const formattedStartTime = startDate.toLocaleTimeString('th-TH', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    
+                    const formattedEndTime = endDate.toLocaleTimeString('th-TH', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    
+                    // กำหนด badge สำหรับประเภทกิจกรรม
+                    let typeBadge = '';
+                    if (event.event_type === 'class') {
+                        typeBadge = '<span class="badge badge-pill badge-class">รายวิชา</span>';
+                    } else if (event.event_type === 'activity') {
+                        typeBadge = '<span class="badge badge-pill badge-activity">กิจกรรม</span>';
+                    } else if (event.event_type === 'seminar') {
+                        typeBadge = '<span class="badge badge-pill badge-seminar">สัมมนา</span>';
+                    } else if (event.event_type === 'exam') {
+                        typeBadge = '<span class="badge badge-pill badge-exam">สอบ</span>';
+                    } else {
+                        typeBadge = '<span class="badge badge-pill badge-other">อื่นๆ</span>';
+                    }
+                    
+                    // กำหนด CSS class สำหรับสถานะ
+                    let statusClass = '';
+                    if (event.status === 'completed') {
+                        statusClass = 'completed';
+                    } else if (event.status === 'cancelled') {
+                        statusClass = 'cancelled';
+                    }
+                    
+                    // กำหนด badge สำหรับสถานะ
+                    let statusBadge = '';
+                    if (event.status === 'active') {
+                        statusBadge = '<span class="badge bg-success">กำลังดำเนินการ</span>';
+                    } else if (event.status === 'completed') {
+                        statusBadge = '<span class="badge bg-secondary">เสร็จสิ้น</span>';
+                    } else if (event.status === 'cancelled') {
+                        statusBadge = '<span class="badge bg-danger">ยกเลิก</span>';
+                    }
+                    
+                    // สร้าง element สำหรับกิจกรรม
+                    const eventElement = document.createElement('div');
+                    eventElement.className = `event-item p-3 mb-2 ${statusClass}`;
+                    eventElement.innerHTML = `
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h5 class="mb-1">${event.event_name}</h5>
+                                <div class="event-meta">
+                                    <div class="mb-1">
+                                        ${typeBadge} ${statusBadge}
+                                    </div>
+                                    <div><i class="fas fa-calendar-day me-1"></i> ${formattedStartDate} ${formattedStartTime} - ${formattedEndTime}</div>
+                                    ${event.location ? `<div><i class="fas fa-location-dot me-1"></i> ${event.location}</div>` : ''}
+                                    ${event.faculty || event.department ? `<div><i class="fas fa-users me-1"></i> ${event.faculty}${event.department ? ' / ' + event.department : ''}</div>` : ''}
+                                </div>
+                            </div>
+                            <div>
+                                <button class="btn btn-sm btn-outline-primary view-event-btn" data-id="${event.id}">
+                                    <i class="fas fa-eye me-1"></i> ดูรายละเอียด
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // ผูกเหตุการณ์ (event) กับปุ่ม "ดูรายละเอียด"
+                    eventElement.querySelector('.view-event-btn').addEventListener('click', function() {
+                        const eventId = this.getAttribute('data-id');
+                        openEventDetail(eventId);
+                    });
+                    
+                    // เพิ่มลงในรายการ
+                    eventList.appendChild(eventElement);
+                });
+                
+                // อัปเดตจำนวนรายการที่แสดง
+                document.getElementById('eventCount').textContent = filteredEvents.length;
+                
+                // สร้างการแบ่งหน้า
+                createPagination(totalPages);
+            }
+            
+            // ฟังก์ชันสำหรับสร้างการแบ่งหน้า
+            function createPagination(totalPages) {
+                const pagination = document.getElementById('eventPagination');
+                pagination.innerHTML = '';
+                
+                // ถ้ามีหน้าเดียว ไม่ต้องแสดงการแบ่งหน้า
+                if (totalPages <= 1) {
+                    return;
+                }
+                
+                // ปุ่มหน้าก่อนหน้า
+                const prevLi = document.createElement('li');
+                prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+                prevLi.innerHTML = `<a class="page-link" href="#" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>`;
+                
+                prevLi.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (currentPage > 1) {
+                        currentPage--;
+                        displayEvents();
+                    }
+                });
+                
+                pagination.appendChild(prevLi);
+                
+                // หน้าต่างๆ
+                for (let i = 1; i <= totalPages; i++) {
+                    const li = document.createElement('li');
+                    li.className = `page-item ${i === currentPage ? 'active' : ''}`;
+                    li.innerHTML = `<a class="page-link" href="#">${i}</a>`;
+                    
+                    li.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        currentPage = i;
+                        displayEvents();
+                    });
+                    
+                    pagination.appendChild(li);
+                }
+                
+                // ปุ่มหน้าถัดไป
+                const nextLi = document.createElement('li');
+                nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+                nextLi.innerHTML = `<a class="page-link" href="#" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>`;
+                
+                nextLi.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (currentPage < totalPages) {
+                        currentPage++;
+                        displayEvents();
+                    }
+                });
+                
+                pagination.appendChild(nextLi);
+            }
+            
+            // ฟังก์ชันสำหรับเปิดรายละเอียดกิจกรรม
+            function openEventDetail(eventId) {
+                showLoading();
+                
+                fetch(`/api/events/${eventId}`)
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    
+                    if (data.success) {
+                        const event = data.event;
+                        
+                        // กำหนดค่าให้กับฟอร์ม
+                        document.getElementById('editEventId').value = event.id;
+                        document.getElementById('editEventName').value = event.event_name;
+                        document.getElementById('editEventType').value = event.event_type;
+                        document.getElementById('editStartTime').value = formatDateForInput(event.start_time);
+                        document.getElementById('editEndTime').value = formatDateForInput(event.end_time);
+                        document.getElementById('editLocation').value = event.location || '';
+                        document.getElementById('editFaculty').value = event.faculty || '';
+                        document.getElementById('editDepartment').value = event.department || '';
+                        document.getElementById('editYearLevel').value = event.year_level || '';
+                        document.getElementById('editDescription').value = event.description || '';
+                        document.getElementById('editStatus').value = event.status;
+                        
+                        // อัปเดต Flatpickr
+                        flatpickr("#editStartTime", {
+                            enableTime: true,
+                            dateFormat: "Y-m-d H:i",
+                            time_24hr: true,
+                            locale: "th",
+                            defaultDate: event.start_time
+                        });
+                        
+                        flatpickr("#editEndTime", {
+                            enableTime: true,
+                            dateFormat: "Y-m-d H:i",
+                            time_24hr: true,
+                            locale: "th",
+                            defaultDate: event.end_time
+                        });
+                        
+                        // โหลดข้อมูลผู้เข้าร่วม
+                        if (data.attendance) {
+                            // อัปเดตสรุปผู้เข้าร่วม
+                            const present = data.summary.present_count || 0;
+                            const late = data.summary.late_count || 0;
+                            const absent = (data.summary.absent_count || 0) + (data.summary.excused_count || 0);
+                            const total = present + late + absent;
+                            
+                            document.getElementById('summaryPresent').textContent = present;
+                            document.getElementById('summaryLate').textContent = late;
+                            document.getElementById('summaryAbsent').textContent = absent;
+                            document.getElementById('summaryTotal').textContent = total;
+                        }
+                        
+                        // เลือกแท็บข้อมูลกิจกรรมเป็นค่าเริ่มต้น
+                        const infoTab = document.getElementById('info-tab');
+                        bootstrap.Tab.getOrCreateInstance(infoTab).show();
+                        
+                        // แสดง modal
+                        const editEventModal = new bootstrap.Modal(document.getElementById('editEventModal'));
+                        editEventModal.show();
+                    } else {
+                        showFeedback('ไม่สามารถโหลดข้อมูลกิจกรรมได้', 'error');
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    console.error('Error loading event details:', error);
+                    showFeedback('เกิดข้อผิดพลาดในการโหลดข้อมูลกิจกรรม', 'error');
+                });
+            }
+            
+            // ฟังก์ชันสำหรับโหลดรายชื่อผู้เข้าร่วม
+            function loadAttendanceList(eventId) {
+                showLoading();
+                
+                fetch(`/api/events/${eventId}`)
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    
+                    if (data.success) {
+                        const attendanceList = document.getElementById('attendanceList');
+                        const attendance = data.attendance;
+                        
+                        // อัปเดตสรุปผู้เข้าร่วม
+                        const present = data.summary.present_count || 0;
+                        const late = data.summary.late_count || 0;
+                        const absent = (data.summary.absent_count || 0) + (data.summary.excused_count || 0);
+                        const total = present + late + absent;
+                        
+                        document.getElementById('summaryPresent').textContent = present;
+                        document.getElementById('summaryLate').textContent = late;
+                        document.getElementById('summaryAbsent').textContent = absent;
+                        document.getElementById('summaryTotal').textContent = total;
+                        
+                        // ล้างรายการเดิม
+                        attendanceList.innerHTML = '';
+                        
+                        // ตรวจสอบว่ามีผู้เข้าร่วมหรือไม่
+                        if (attendance.length === 0) {
+                            document.getElementById('noAttendance').classList.remove('d-none');
+                        } else {
+                            document.getElementById('noAttendance').classList.add('d-none');
+                            
+                            // เรียงลำดับตามเวลาล่าสุดขึ้นก่อน
+                            attendance.sort((a, b) => new Date(b.check_in_time) - new Date(a.check_in_time));
+                            
+                            // สร้างรายการผู้เข้าร่วม
+                            attendance.forEach(record => {
+                                const checkInTime = new Date(record.check_in_time);
+                                const formattedTime = checkInTime.toLocaleTimeString('th-TH', {
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                });
+                                
+                                // กำหนด badge สำหรับสถานะ
+                                let statusBadge = '';
+                                if (record.status === 'present') {
+                                    statusBadge = '<span class="badge bg-success">มาเรียน</span>';
+                                } else if (record.status === 'late') {
+                                    statusBadge = '<span class="badge bg-warning text-dark">มาสาย</span>';
+                                } else if (record.status === 'absent') {
+                                    statusBadge = '<span class="badge bg-danger">ขาดเรียน</span>';
+                                } else if (record.status === 'excused') {
+                                    statusBadge = '<span class="badge bg-info">ลา</span>';
+                                }
+                                
+                                const row = document.createElement('tr');
+                                row.innerHTML = `
+                                    <td>${record.student_id}</td>
+                                    <td>${record.student_name || '-'}</td>
+                                    <td>${record.faculty || '-'}${record.department ? ' / ' + record.department : ''}</td>
+                                    <td>${formattedTime}</td>
+                                    <td>${statusBadge}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-danger delete-attendance-btn" data-id="${record.id}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                `;
+                                
+                                // ผูกเหตุการณ์กับปุ่มลบ
+                                row.querySelector('.delete-attendance-btn').addEventListener('click', function() {
+                                    const attendanceId = this.getAttribute('data-id');
+                                    if (confirm('คุณต้องการลบรายการนี้ใช่หรือไม่?')) {
+                                        deleteAttendance(attendanceId, eventId);
+                                    }
+                                });
+                                
+                                attendanceList.appendChild(row);
+                            });
+                        }
+                        
+                        // เพิ่มปุ่มเพิ่มรายชื่อ
+                        const addButton = document.createElement('div');
+                        addButton.className = 'text-center mt-3';
+                        addButton.innerHTML = `
+                            <button class="btn btn-primary btn-sm" id="addAttendanceButton">
+                                <i class="fas fa-plus me-1"></i> เพิ่มรายชื่อผู้เข้าร่วม
+                            </button>
+                        `;
+                        
+                        // ผูกเหตุการณ์กับปุ่มเพิ่มรายชื่อ
+                        addButton.querySelector('#addAttendanceButton').addEventListener('click', function() {
+                            // กำหนดค่า eventId ให้กับ modal
+                            document.getElementById('attendanceEventId').value = eventId;
+                            
+                            // รีเซ็ตฟอร์ม
+                            document.getElementById('addAttendanceForm').reset();
+                            
+                            // แสดง modal
+                            const addAttendanceModal = new bootstrap.Modal(document.getElementById('addAttendanceModal'));
+                            addAttendanceModal.show();
+                        });
+                        
+                        // เพิ่มปุ่มลงในส่วนท้ายของ attendance-tab-pane
+                        const tabPane = document.getElementById('attendance-tab-pane');
+                        
+                        // ตรวจสอบว่ามีปุ่มเพิ่มรายชื่ออยู่แล้วหรือไม่
+                        const existingButton = tabPane.querySelector('#addAttendanceButton');
+                        if (existingButton) {
+                            existingButton.parentElement.remove();
+                        }
+                        
+                        tabPane.appendChild(addButton);
+                    } else {
+                        showFeedback('ไม่สามารถโหลดรายชื่อผู้เข้าร่วมได้', 'error');
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    console.error('Error loading attendance list:', error);
+                    showFeedback('เกิดข้อผิดพลาดในการโหลดรายชื่อผู้เข้าร่วม', 'error');
+                });
+            }
+            
+            // ฟังก์ชันสำหรับสร้างกิจกรรมใหม่
+            function createEvent() {
+                // ตรวจสอบความถูกต้องของฟอร์ม
+                const form = document.getElementById('createEventForm');
+                if (!form.checkValidity()) {
+                    form.reportValidity();
+                    return;
+                }
+                
+                // ดึงค่าจากฟอร์ม
+                const eventName = document.getElementById('eventName').value;
+                const eventType = document.getElementById('eventType').value;
+                const startTime = document.getElementById('startTime').value;
+                const endTime = document.getElementById('endTime').value;
+                const location = document.getElementById('location').value;
+                const faculty = document.getElementById('faculty').value;
+                const department = document.getElementById('department').value;
+                const yearLevel = document.getElementById('yearLevel').value;
+                const description = document.getElementById('description').value;
+                
+                // ตรวจสอบวันที่
+                const startDate = new Date(startTime);
+                const endDate = new Date(endTime);
+                
+                if (startDate >= endDate) {
+                    showFeedback('เวลาเริ่มต้นต้องน้อยกว่าเวลาสิ้นสุด', 'warning');
+                    return;
+                }
+                
+                // แสดง loading
+                showLoading();
+                
+                // ส่งคำขอไปยัง API
+                fetch('/api/events', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        eventName,
+                        eventType,
+                        startTime,
+                        endTime,
+                        location,
+                        faculty,
+                        department,
+                        yearLevel,
+                        description
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    
+                    if (data.success) {
+                        // รีเซ็ตฟอร์ม
+                        form.reset();
+                        
+                        // ปิด modal
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('createEventModal'));
+                        modal.hide();
+                        
+                        // แสดงข้อความแจ้งเตือน
+                        showFeedback('สร้างกิจกรรมสำเร็จ', 'success');
+                        
+                        // โหลดรายการกิจกรรมใหม่
+                        loadEvents();
+                    } else {
+                        showFeedback(data.message || 'เกิดข้อผิดพลาดในการสร้างกิจกรรม', 'error');
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    console.error('Error creating event:', error);
+                    showFeedback('เกิดข้อผิดพลาดในการสร้างกิจกรรม', 'error');
+                });
+            }
+            
+            // ฟังก์ชันสำหรับอัปเดตกิจกรรม
+            function updateEvent() {
+                // ตรวจสอบความถูกต้องของฟอร์ม
+                const form = document.getElementById('editEventForm');
+                if (!form.checkValidity()) {
+                    form.reportValidity();
+                    return;
+                }
+                
+                // ดึงค่าจากฟอร์ม
+                const eventId = document.getElementById('editEventId').value;
+                const eventName = document.getElementById('editEventName').value;
+                const eventType = document.getElementById('editEventType').value;
+                const startTime = document.getElementById('editStartTime').value;
+                const endTime = document.getElementById('editEndTime').value;
+                const location = document.getElementById('editLocation').value;
+                const faculty = document.getElementById('editFaculty').value;
+                const department = document.getElementById('editDepartment').value;
+                const yearLevel = document.getElementById('editYearLevel').value;
+                const description = document.getElementById('editDescription').value;
+                const status = document.getElementById('editStatus').value;
+                
+                // ตรวจสอบวันที่
+                const startDate = new Date(startTime);
+                const endDate = new Date(endTime);
+                
+                if (startDate >= endDate) {
+                    showFeedback('เวลาเริ่มต้นต้องน้อยกว่าเวลาสิ้นสุด', 'warning');
+                    return;
+                }
+                
+                // แสดง loading
+                showLoading();
+                
+                // ส่งคำขอไปยัง API
+                fetch(`/api/events/${eventId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        eventName,
+                        eventType,
+                        startTime,
+                        endTime,
+                        location,
+                        faculty,
+                        department,
+                        yearLevel,
+                        description,
+                        status
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    
+                    if (data.success) {
+                        // ปิด modal
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('editEventModal'));
+                        modal.hide();
+                        
+                        // แสดงข้อความแจ้งเตือน
+                        showFeedback('อัปเดตกิจกรรมสำเร็จ', 'success');
+                        
+                        // โหลดรายการกิจกรรมใหม่
+                        loadEvents();
+                    } else {
+                        showFeedback(data.message || 'เกิดข้อผิดพลาดในการอัปเดตกิจกรรม', 'error');
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    console.error('Error updating event:', error);
+                    showFeedback('เกิดข้อผิดพลาดในการอัปเดตกิจกรรม', 'error');
+                });
+            }
+            
+            // ฟังก์ชันสำหรับเพิ่มรายชื่อผู้เข้าร่วม
+            function addAttendance() {
+                // ตรวจสอบความถูกต้องของฟอร์ม
+                const form = document.getElementById('addAttendanceForm');
+                if (!form.checkValidity()) {
+                    form.reportValidity();
+                    return;
+                }
+                
+                // ดึงค่าจากฟอร์ม
+                const eventId = document.getElementById('attendanceEventId').value;
+                const studentId = document.getElementById('attendanceStudentId').value;
+                const studentName = document.getElementById('attendanceStudentName').value;
+                const faculty = document.getElementById('attendanceFaculty').value;
+                const department = document.getElementById('attendanceDepartment').value;
+                const status = document.getElementById('attendanceStatus').value;
+                const notes = document.getElementById('attendanceNotes').value;
+                
+                // แสดง loading
+                showLoading();
+                
+                // ส่งคำขอไปยัง API
+                fetch('/api/attendance', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        eventId,
+                        studentId,
+                        studentName,
+                        faculty,
+                        department,
+                        status,
+                        notes
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    
+                    if (data.success) {
+                        // รีเซ็ตฟอร์ม
+                        form.reset();
+                        
+                        // ปิด modal
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('addAttendanceModal'));
+                        modal.hide();
+                        
+                        // แสดงข้อความแจ้งเตือน
+                        showFeedback('เพิ่มรายชื่อผู้เข้าร่วมสำเร็จ', 'success');
+                        
+                        // โหลดรายชื่อผู้เข้าร่วมใหม่
+                        loadAttendanceList(eventId);
+                    } else {
+                        showFeedback(data.message || 'เกิดข้อผิดพลาดในการเพิ่มรายชื่อผู้เข้าร่วม', 'error');
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    console.error('Error adding attendance:', error);
+                    showFeedback('เกิดข้อผิดพลาดในการเพิ่มรายชื่อผู้เข้าร่วม', 'error');
+                });
+            }
+            
+            // ฟังก์ชันสำหรับลบรายชื่อผู้เข้าร่วม
+            function deleteAttendance(attendanceId, eventId) {
+                showLoading();
+                
+                fetch(`/api/attendance/${attendanceId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    
+                    if (data.success) {
+                        showFeedback('ลบรายชื่อผู้เข้าร่วมสำเร็จ', 'success');
+                        
+                        // โหลดรายชื่อผู้เข้าร่วมใหม่
+                        loadAttendanceList(eventId);
+                    } else {
+                        showFeedback(data.message || 'เกิดข้อผิดพลาดในการลบรายชื่อผู้เข้าร่วม', 'error');
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    console.error('Error deleting attendance:', error);
+                    showFeedback('เกิดข้อผิดพลาดในการลบรายชื่อผู้เข้าร่วม', 'error');
+                });
+            }
+            
+            // ฟังก์ชันสำหรับส่งออกข้อมูล
+            function exportAttendance() {
+                const eventId = document.getElementById('editEventId').value;
+                
+                if (!eventId) {
+                    showFeedback('ไม่พบข้อมูลกิจกรรม', 'error');
+                    return;
+                }
+                
+                showLoading();
+                
+                fetch(`/api/events/${eventId}`)
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    
+                    if (data.success) {
+                        const event = data.event;
+                        const attendance = data.attendance;
+                        
+                        if (attendance.length === 0) {
+                            showFeedback('ไม่มีรายชื่อผู้เข้าร่วมในกิจกรรมนี้', 'warning');
+                            return;
+                        }
+                        
+                        // สร้างข้อมูล CSV
+                        let csvContent = 'รหัสนักศึกษา,ชื่อ-นามสกุล,คณะ,สาขา,เวลาเข้า,เวลาออก,สถานะ,บันทึกเพิ่มเติม\n';
+                        
+                        attendance.forEach(record => {
+                            // แปลงสถานะเป็นภาษาไทย
+                            let statusText = '';
+                            if (record.status === 'present') {
+                                statusText = 'มาเรียน';
+                            } else if (record.status === 'late') {
+                                statusText = 'มาสาย';
+                            } else if (record.status === 'absent') {
+                                statusText = 'ขาดเรียน';
+                            } else if (record.status === 'excused') {
+                                statusText = 'ลาป่วย/ลากิจ';
+                            }
+                            
+                            // แปลงวันที่
+                            const checkInTime = record.check_in_time ? new Date(record.check_in_time).toLocaleString('th-TH') : '';
+                            const checkOutTime = record.check_out_time ? new Date(record.check_out_time).toLocaleString('th-TH') : '';
+                            
+                            // จัดการตัวอักษรพิเศษที่อาจทำให้เกิดปัญหากับไฟล์ CSV
+                            const studentName = record.student_name ? `"${record.student_name.replace(/"/g, '""')}"` : '-';
+                            const faculty = record.faculty ? `"${record.faculty.replace(/"/g, '""')}"` : '-';
+                            const department = record.department ? `"${record.department.replace(/"/g, '""')}"` : '-';
+                            const notes = record.notes ? `"${record.notes.replace(/"/g, '""')}"` : '';
+                            
+                            csvContent += `${record.student_id},${studentName},${faculty},${department},${checkInTime},${checkOutTime},${statusText},${notes}\n`;
+                        });
+                        
+                        // สร้าง Blob และลิงก์สำหรับดาวน์โหลด
+                        const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = `attendance_${event.event_name}_${new Date().toISOString().slice(0, 10)}.csv`;
+                        link.style.display = 'none';
+                        document.body.appendChild(link);
+                        
+                        link.click();
+                        
+                        // ทำความสะอาด
+                        URL.revokeObjectURL(url);
+                        document.body.removeChild(link);
+                    } else {
+                        showFeedback('ไม่สามารถโหลดข้อมูลกิจกรรมได้', 'error');
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    console.error('Error exporting attendance:', error);
+                    showFeedback('เกิดข้อผิดพลาดในการส่งออกข้อมูล', 'error');
+                });
+            }
+            
+            // ฟังก์ชันสำหรับจัดรูปแบบวันที่สำหรับ input
+            function formatDateForInput(dateString) {
+                const date = new Date(dateString);
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                
+                return `${year}-${month}-${day} ${hours}:${minutes}`;
+            }
+            
+            // ฟังก์ชันสำหรับแสดงข้อความแจ้งเตือน
+            function showFeedback(message, type) {
+                const container = document.querySelector('.feedback-container');
+                const toast = document.createElement('div');
+                toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'danger'} border-0`;
+                toast.setAttribute('role', 'alert');
+                toast.setAttribute('aria-live', 'assertive');
+                toast.setAttribute('aria-atomic', 'true');
+                
+                if (type === 'warning') {
+                    toast.classList.remove('text-white');
+                    toast.classList.add('text-dark');
+                }
+                
+                toast.innerHTML = `
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                `;
+                
+                container.appendChild(toast);
+                
+                const bsToast = new bootstrap.Toast(toast, {
+                    autohide: true,
+                    delay: 3000
+                });
+                
+                bsToast.show();
+                
+                // เมื่อ toast ถูกซ่อน ให้ลบออกจาก DOM
+                toast.addEventListener('hidden.bs.toast', function() {
+                    toast.remove();
+                });
+            }
+            
+            // ฟังก์ชันสำหรับแสดง loading
+            function showLoading() {
+                document.getElementById('loadingOverlay').style.display = 'flex';
+            }
+            
+            // ฟังก์ชันสำหรับซ่อน loading
+            function hideLoading() {
+                document.getElementById('loadingOverlay').style.display = 'none';
+            }
+            
+            // ฟังก์ชันตรวจสอบสถานะการล็อกอิน
+            function checkAuthentication() {
+                showLoading();
+                
+                fetch('/api/login', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    hideLoading();
+                    
+                    if (response.status === 401) {
+                        // ไม่ได้ล็อกอิน ให้ redirect ไปหน้าล็อกอิน
+                        window.location.href = '/login';
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    console.error('Error checking authentication:', error);
+                    showFeedback('เกิดข้อผิดพลาดในการตรวจสอบสถานะการล็อกอิน', 'error');
+                });
+            }
+            
+            // ฟังก์ชันออกจากระบบ
+            function logout() {
+                showLoading();
+                
+                fetch('/api/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    
+                    if (data.success) {
+                        // ออกจากระบบสำเร็จ ให้ redirect ไปหน้าล็อกอิน
+                        window.location.href = '/login';
+                    } else {
+                        showFeedback(data.message || 'เกิดข้อผิดพลาดในการออกจากระบบ', 'error');
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    console.error('Error logging out:', error);
+                    showFeedback('เกิดข้อผิดพลาดในการออกจากระบบ', 'error');
+                });
+            }
+        });
+    </script>
+</body>
+</html>
