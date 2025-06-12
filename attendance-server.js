@@ -39,41 +39,39 @@ app.use(
     secret: process.env.SESSION_SECRET || "attendance-secret-key",
     resave: false,
     saveUninitialized: false,
+    name: 'attendance.sid', // เปลี่ยนชื่อ session cookie
     cookie: {
-      secure: process.env.NODE_ENV === "production", // ใช้ HTTPS เฉพาะใน production
-      maxAge: 3600000, // 1 ชั่วโมง
+      secure: false, // เปลี่ยนเป็น false ชั่วคราวเพื่อทดสอบ
+      maxAge: 3600000, // 1 ชั่วโมง  
       httpOnly: true, // ป้องกัน XSS
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // สำหรับ cross-origin ใน production
-      // ลบ domain setting ออก เพราะอาจทำให้เกิดปัญหา
+      sameSite: 'lax', // เปลี่ยนเป็น lax
+      // ไม่ต้องใส่ domain
     },
   })
 );
+
 // ตั้งค่า CORS ให้รองรับ credentials อย่างถูกต้อง
 app.use(
   cors({
     origin: function (origin, callback) {
-      // อนุญาทให้ทุก origin ใน development, ระบุเฉพาะใน production
-      const allowedOrigins = [
-        "https://attendance.devapp.cc",
-        "http://localhost:4000",
-        "http://127.0.0.1:4000"
-      ];
-      
-      if (process.env.NODE_ENV !== "production") {
-        return callback(null, true);
-      }
-      
-      if (!origin || allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-      
-      callback(new Error("Not allowed by CORS"));
+      // อนุญาตทุก origin ในการทดสอบ
+      console.log('Request origin:', origin);
+      return callback(null, true);
     },
     methods: ["GET", "POST", "OPTIONS", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
     credentials: true, // สำคัญ: ต้องเปิดให้ส่ง cookies ได้
   })
 );
+
+// เพิ่ม middleware เพื่อ debug session
+app.use((req, res, next) => {
+  console.log('Session ID:', req.sessionID);
+  console.log('Session user:', req.session.user);
+  console.log('Cookies:', req.headers.cookie);
+  next();
+});
+
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, "public")));
 
