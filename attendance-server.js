@@ -251,6 +251,8 @@ const requireAdmin = (req, res, next) => {
 app.post("/api/login", async (req, res) => {
   try {
     const { username, password } = req.body;
+    
+    console.log('Login attempt:', { username, sessionID: req.sessionID });
 
     if (!username || !password) {
       return res.status(400).json({
@@ -307,19 +309,33 @@ app.post("/api/login", async (req, res) => {
       department: user.department,
       faculty: user.faculty,
     };
-
-    return res.json({
-      success: true,
-      message: "ล็อกอินสำเร็จ",
-      user: {
-        id: user.id,
-        username: user.username,
-        fullname: user.fullname,
-        role: user.role,
-        department: user.department,
-        faculty: user.faculty,
-      },
+    
+    // บันทึก session แล้วตอบกลับ
+    req.session.save((err) => {
+      if (err) {
+        console.error('Session save error:', err);
+        return res.status(500).json({
+          success: false,
+          message: "เกิดข้อผิดพลาดในการบันทึก session",
+        });
+      }
+      
+      console.log('Session saved successfully:', req.session.user);
+      
+      return res.json({
+        success: true,
+        message: "ล็อกอินสำเร็จ",
+        user: {
+          id: user.id,
+          username: user.username,
+          fullname: user.fullname,
+          role: user.role,
+          department: user.department,
+          faculty: user.faculty,
+        },
+      });
     });
+
   } catch (error) {
     console.error("เกิดข้อผิดพลาดในการล็อกอิน:", error);
 
@@ -329,6 +345,7 @@ app.post("/api/login", async (req, res) => {
     });
   }
 });
+
 
 app.get('/api/scanner-config', (req, res) => {
   // ส่งเฉพาะค่าที่จำเป็น ไม่ควรส่งค่าที่เป็นความลับทั้งหมด
@@ -340,6 +357,9 @@ app.get('/api/scanner-config', (req, res) => {
 
 // API ตรวจสอบสถานะการล็อกอิน
 app.get("/api/login", (req, res) => {
+  console.log('Check auth - Session ID:', req.sessionID);
+  console.log('Check auth - Session user:', req.session.user);
+  
   if (req.session.user) {
     return res.json({
       success: true,
