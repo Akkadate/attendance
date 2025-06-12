@@ -40,20 +40,38 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: process.env.NODE_ENV === "production",
+      secure: process.env.NODE_ENV === "production", // ใช้ HTTPS เฉพาะใน production
       maxAge: 3600000, // 1 ชั่วโมง
-      domain: ".devapp.cc", // เพิ่มบรรทัดนี้
+      httpOnly: true, // ป้องกัน XSS
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // สำหรับ cross-origin ใน production
+      // ลบ domain setting ออก เพราะอาจทำให้เกิดปัญหา
     },
   })
 );
-
-// ตั้งค่า middleware
+// ตั้งค่า CORS ให้รองรับ credentials อย่างถูกต้อง
 app.use(
   cors({
-    origin: ["https://attendance.devapp.cc"], // ระบุ domain ที่อนุญาต
+    origin: function (origin, callback) {
+      // อนุญาทให้ทุก origin ใน development, ระบุเฉพาะใน production
+      const allowedOrigins = [
+        "https://attendance.devapp.cc",
+        "http://localhost:4000",
+        "http://127.0.0.1:4000"
+      ];
+      
+      if (process.env.NODE_ENV !== "production") {
+        return callback(null, true);
+      }
+      
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      
+      callback(new Error("Not allowed by CORS"));
+    },
     methods: ["GET", "POST", "OPTIONS", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
-    credentials: true, // เพิ่มบรรทัดนี้เพื่อส่ง cookie ผ่าน CORS
+    credentials: true, // สำคัญ: ต้องเปิดให้ส่ง cookies ได้
   })
 );
 app.use(bodyParser.json());
