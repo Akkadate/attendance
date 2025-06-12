@@ -208,43 +208,43 @@
                 // แสดง loading
                 showLoading();
                 
-             fetch('/api/login', {
-    method: 'POST',
-    credentials: 'include', // เพิ่มบรรทัดนี้
-    headers: {
-        'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-        username: username,
-        password: password
-    })
-})
-.then(response => response.json())
-.then(data => {
-    hideLoading();
-    
-    if (data.success) {
-        // ล็อกอินสำเร็จ นำผู้ใช้ไปยังหน้าหลัก
-        showAlert('เข้าสู่ระบบสำเร็จ กำลังนำคุณไปยังหน้าหลัก...', 'success');
-        
-        // ไม่ต้องเก็บใน localStorage แล้ว เพราะใช้ session
-        // localStorage.setItem('user', JSON.stringify(data.user));
-        
-        // เปลี่ยนเส้นทางไปยังหน้าหลักหลังจาก 1 วินาที
-        setTimeout(() => {
-            window.location.href = '/scan';
-        }, 1000);
-    } else {
-        // แสดงข้อความข้อผิดพลาด
-        showAlert(data.message || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง', 'danger');
-    }
-})
-.catch(error => {
-    hideLoading();
-    console.error('Error during login:', error);
-    showAlert('เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์', 'danger');
-});
-
+                fetch('/api/login', {
+                    method: 'POST',
+                    credentials: 'include', // เพิ่มบรรทัดนี้
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    
+                    if (data.success) {
+                        // ล็อกอินสำเร็จ นำผู้ใช้ไปยังหน้าหลัก
+                        showAlert('เข้าสู่ระบบสำเร็จ กำลังนำคุณไปยังหน้าหลัก...', 'success');
+                        
+                        // ไม่ต้องเก็บใน localStorage แล้ว เพราะใช้ session
+                        // localStorage.setItem('user', JSON.stringify(data.user));
+                        
+                        // เปลี่ยนเส้นทางไปยังหน้าหลักหลังจาก 1 วินาที
+                        setTimeout(() => {
+                            window.location.href = '/scan';
+                        }, 1000);
+                    } else {
+                        // แสดงข้อความข้อผิดพลาด
+                        showAlert(data.message || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง', 'danger');
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    console.error('Error during login:', error);
+                    showAlert('เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์', 'danger');
+                });
+            }); // เพิ่ม closing bracket ที่หายไป
             
             // ฟังก์ชันสำหรับแสดงข้อความแจ้งเตือน
             function showAlert(message, type) {
@@ -263,25 +263,25 @@
                 document.getElementById('loadingOverlay').style.display = 'none';
             }
             
-           // แก้ไข checkAuthentication ใน login.html ด้วย
-function checkAuthentication() {
-    fetch('/api/login', {
-        method: 'GET',
-        credentials: 'include', // เพิ่มบรรทัดนี้
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => {
-        if (response.ok) {
-            // มีการล็อกอินอยู่แล้ว ให้ redirect ไปหน้าหลัก
-            window.location.href = '/scan';
-        }
-    })
-    .catch(error => {
-        console.error('Error checking authentication:', error);
-    });
-}
+            // แก้ไข checkAuthentication ใน login.html ด้วย
+            function checkAuthentication() {
+                fetch('/api/login', {
+                    method: 'GET',
+                    credentials: 'include', // เพิ่มบรรทัดนี้
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        // มีการล็อกอินอยู่แล้ว ให้ redirect ไปหน้าหลัก
+                        window.location.href = '/scan';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking authentication:', error);
+                });
+            }
         });
     </script>
 </body>
