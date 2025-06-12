@@ -700,46 +700,51 @@
                 logout();
             });
             
-            // ฟังก์ชันโหลดรายการกิจกรรม
             function loadEvents() {
-                showLoading();
-                
-                // ดึงค่าจากตัวเลือกการกรอง (ปัญหาอยู่ตรงนี้)
-                const status = document.getElementById('filterStatus').value;
-                const type = document.getElementById('filterType').value;
-                const search = document.getElementById('filterSearch').value;
-                
-                let url = '/api/events';
-                const params = [];
-                
-                if (status) params.push(`status=${status}`);
-                if (type) params.push(`type=${type}`);
-                if (search) params.push(`search=${encodeURIComponent(search)}`);
-                
-                if (params.length > 0) {
-                    url += '?' + params.join('&');
-                }
-                
-                fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    hideLoading();
-                    
-                    if (data.success) {
-                        allEvents = data.events;
-                        filteredEvents = [...allEvents]; // ตั้งค่า filteredEvents เป็นข้อมูลที่กรองมาแล้วจาก API
-                        displayEvents();
-                    } else {
-                        showFeedback('ไม่สามารถโหลดรายการกิจกรรมได้', 'error');
-                    }
-                })
-                .catch(error => {
-                    hideLoading();
-                    console.error('Error loading events:', error);
-                    showFeedback('เกิดข้อผิดพลาดในการโหลดรายการกิจกรรม', 'error');
-                });
-            }
-            
+    showLoading();
+    
+    // ดึงค่าจากตัวเลือกการกรอง
+    const status = document.getElementById('filterStatus').value;
+    const type = document.getElementById('filterType').value;
+    const search = document.getElementById('filterSearch').value;
+    
+    let url = '/api/events';
+    const params = [];
+    
+    if (status) params.push(`status=${status}`);
+    if (type) params.push(`type=${type}`);
+    if (search) params.push(`search=${encodeURIComponent(search)}`);
+    
+    if (params.length > 0) {
+        url += '?' + params.join('&');
+    }
+    
+    fetch(url, {
+        method: 'GET',
+        credentials: 'include', // เพิ่มบรรทัดนี้เพื่อส่ง cookies
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideLoading();
+        
+        if (data.success) {
+            allEvents = data.events;
+            filteredEvents = [...allEvents];
+            displayEvents();
+        } else {
+            showFeedback('ไม่สามารถโหลดรายการกิจกรรมได้', 'error');
+        }
+    })
+    .catch(error => {
+        hideLoading();
+        console.error('Error loading events:', error);
+        showFeedback('เกิดข้อผิดพลาดในการโหลดรายการกิจกรรม', 'error');
+    });
+}
+
             // ฟังก์ชันสำหรับกรองกิจกรรม
             function filterEvents() {
                 loadEvents();
@@ -1204,6 +1209,7 @@
                 // ส่งคำขอไปยัง API
                 fetch('/api/events', {
                     method: 'POST',
+                    credentials: 'include', // เพิ่มบรรทัดนี้
                     headers: {
                         'Content-Type': 'application/json'
                     },
@@ -1284,6 +1290,7 @@
                 // ส่งคำขอไปยัง API
                 fetch(`/api/events/${eventId}`, {
                     method: 'PUT',
+                    credentials: 'include',
                     headers: {
                         'Content-Type': 'application/json'
                     },
@@ -1349,6 +1356,7 @@
                 // ส่งคำขอไปยัง API
                 fetch('/api/attendance', {
                     method: 'POST',
+                    credentials: 'include', // เพิ่มบรรทัดนี้
                     headers: {
                         'Content-Type': 'application/json'
                     },
@@ -1395,7 +1403,8 @@
                 showLoading();
                 
                 fetch(`/api/attendance/${attendanceId}`, {
-                    method: 'DELETE'
+                    method: 'DELETE',
+                    credentials: 'include' // เพิ่มบรรทัดนี้
                 })
                 .then(response => response.json())
                 .then(data => {
@@ -1557,30 +1566,34 @@
             }
             
             // ฟังก์ชันตรวจสอบสถานะการล็อกอิน
-            function checkAuthentication() {
-                showLoading();
-                
-                fetch('/api/login', {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                })
-                .then(response => {
-                    hideLoading();
-                    
-                    if (response.status === 401) {
-                        // ไม่ได้ล็อกอิน ให้ redirect ไปหน้าล็อกอิน
-                        window.location.href = '/login';
-                    }
-                })
-                .catch(error => {
-                    hideLoading();
-                    console.error('Error checking authentication:', error);
-                    showFeedback('เกิดข้อผิดพลาดในการตรวจสอบสถานะการล็อกอิน', 'error');
-                });
-            }
-            
+            // ต้องเพิ่ม credentials: 'include' ในทุก fetch request ที่ต้องการ session
+// เช่น createEvent(), updateEvent(), addAttendance(), deleteAttendance(), exportAttendance() ฯลฯ
+         // แก้ไขฟังก์ชัน checkAuthentication() ด้วย
+function checkAuthentication() {
+    showLoading();
+    
+    fetch('/api/login', {
+        method: 'GET',
+        credentials: 'include', // เพิ่มบรรทัดนี้
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        hideLoading();
+        
+        if (response.status === 401) {
+            // ไม่ได้ล็อกอิน ให้ redirect ไปหน้าล็อกอิน
+            window.location.href = '/login';
+        }
+    })
+    .catch(error => {
+        hideLoading();
+        console.error('Error checking authentication:', error);
+        showFeedback('เกิดข้อผิดพลาดในการตรวจสอบสถานะการล็อกอิน', 'error');
+    });
+}
+
             // ฟังก์ชันออกจากระบบ
             function logout() {
                 showLoading();
