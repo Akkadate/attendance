@@ -208,7 +208,7 @@
                 // แสดง loading
                 showLoading();
                 
-                fetch('/api/login', {
+fetch('/api/login', {
     method: 'POST',
     credentials: 'include',
     headers: {
@@ -219,44 +219,18 @@
         password: password
     })
 })
-.then(response => {
-    console.log('Login response status:', response.status);
-    console.log('Login response headers:', response.headers);
-    
-    // ตรวจสอบ Set-Cookie header
-    const setCookie = response.headers.get('set-cookie');
-    console.log('Set-Cookie header:', setCookie);
-    
-    return response.json();
-})
+.then(response => response.json())
 .then(data => {
     hideLoading();
-    console.log('Login response data:', data);
     
     if (data.success) {
         // ล็อกอินสำเร็จ นำผู้ใช้ไปยังหน้าหลัก
         showAlert('เข้าสู่ระบบสำเร็จ กำลังนำคุณไปยังหน้าหลัก...', 'success');
         
-        // เพิ่มการดีเลย์เพื่อให้ session ถูกบันทึก
+        // เปลี่ยนเส้นทางไปยังหน้าหลักหลังจาก 1 วินาที
         setTimeout(() => {
-            // ทดสอบโดยตรวจสอบสถานะก่อน redirect
-            fetch('/api/login', {
-                method: 'GET',
-                credentials: 'include',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => {
-                console.log('Auth check response:', response.status);
-                if (response.ok) {
-                    window.location.href = '/scan';
-                } else {
-                    console.error('Session not found after login');
-                    showAlert('เกิดข้อผิดพลาดกับ session กรุณาลองใหม่', 'danger');
-                }
-            });
-        }, 2000); // เพิ่มเวลารอเป็น 2 วินาที
+            window.location.href = '/scan';
+        }, 1000);
     } else {
         // แสดงข้อความข้อผิดพลาด
         showAlert(data.message || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง', 'danger');
