@@ -33,44 +33,46 @@ const limiter = rateLimit({
 });
 app.use("/api/", limiter);
 
-// ตั้งค่า session
+// ตั้งค่า session - กลับไปแบบเดิม
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "attendance-secret-key",
     resave: false,
     saveUninitialized: false,
-    name: 'attendance.sid', // เปลี่ยนชื่อ session cookie
     cookie: {
-      secure: false, // เปลี่ยนเป็น false ชั่วคราวเพื่อทดสอบ
-      maxAge: 3600000, // 1 ชั่วโมง  
-      httpOnly: true, // ป้องกัน XSS
-      sameSite: 'lax', // เปลี่ยนเป็น lax
-      // ไม่ต้องใส่ domain
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 3600000, // 1 ชั่วโมง
+      httpOnly: true,
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     },
   })
 );
 
-// ตั้งค่า CORS ให้รองรับ credentials อย่างถูกต้อง
+// ตั้งค่า CORS - กลับไปแบบเดิม  
 app.use(
   cors({
     origin: function (origin, callback) {
-      // อนุญาตทุก origin ในการทดสอบ
-      console.log('Request origin:', origin);
-      return callback(null, true);
+      const allowedOrigins = [
+        "https://attendance.devapp.cc",
+        "http://localhost:4000",
+        "http://127.0.0.1:4000"
+      ];
+      
+      if (process.env.NODE_ENV !== "production") {
+        return callback(null, true);
+      }
+      
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      
+      callback(new Error("Not allowed by CORS"));
     },
     methods: ["GET", "POST", "OPTIONS", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
-    credentials: true, // สำคัญ: ต้องเปิดให้ส่ง cookies ได้
+    credentials: true,
   })
 );
-
-// เพิ่ม middleware เพื่อ debug session
-app.use((req, res, next) => {
-  console.log('Session ID:', req.sessionID);
-  console.log('Session user:', req.session.user);
-  console.log('Cookies:', req.headers.cookie);
-  next();
-});
 
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, "public")));
@@ -248,11 +250,13 @@ const requireAdmin = (req, res, next) => {
 // ------ API Routes ------ //
 
 // API ล็อกอินเข้าสู่ระบบ
+
+// แทนที่ API ล็อกอิน ใน attendance-server.js กลับไปแบบเดิม
+
+// API ล็อกอินเข้าสู่ระบบ
 app.post("/api/login", async (req, res) => {
   try {
     const { username, password } = req.body;
-    
-    console.log('Login attempt:', { username, sessionID: req.sessionID });
 
     if (!username || !password) {
       return res.status(400).json({
@@ -309,33 +313,19 @@ app.post("/api/login", async (req, res) => {
       department: user.department,
       faculty: user.faculty,
     };
-    
-    // บันทึก session แล้วตอบกลับ
-    req.session.save((err) => {
-      if (err) {
-        console.error('Session save error:', err);
-        return res.status(500).json({
-          success: false,
-          message: "เกิดข้อผิดพลาดในการบันทึก session",
-        });
-      }
-      
-      console.log('Session saved successfully:', req.session.user);
-      
-      return res.json({
-        success: true,
-        message: "ล็อกอินสำเร็จ",
-        user: {
-          id: user.id,
-          username: user.username,
-          fullname: user.fullname,
-          role: user.role,
-          department: user.department,
-          faculty: user.faculty,
-        },
-      });
-    });
 
+    return res.json({
+      success: true,
+      message: "ล็อกอินสำเร็จ",
+      user: {
+        id: user.id,
+        username: user.username,
+        fullname: user.fullname,
+        role: user.role,
+        department: user.department,
+        faculty: user.faculty,
+      },
+    });
   } catch (error) {
     console.error("เกิดข้อผิดพลาดในการล็อกอิน:", error);
 
@@ -346,20 +336,8 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-
-app.get('/api/scanner-config', (req, res) => {
-  // ส่งเฉพาะค่าที่จำเป็น ไม่ควรส่งค่าที่เป็นความลับทั้งหมด
-  res.json({
-    ENCRYPTION_SECRET: process.env.ENCRYPTION_SECRET,
-    // ตัวแปรอื่นๆ ที่จำเป็น
-  });
-});
-
 // API ตรวจสอบสถานะการล็อกอิน
 app.get("/api/login", (req, res) => {
-  console.log('Check auth - Session ID:', req.sessionID);
-  console.log('Check auth - Session user:', req.session.user);
-  
   if (req.session.user) {
     return res.json({
       success: true,
